@@ -10,7 +10,9 @@ namespace ImageChanger
     public static class Settings
     {
         public static string OS = "Windows";
-            // Windows // Linux
+        // Windows // Linux
         public static int Mode = 1;
+        public static string PicturesDirectoryPath = Environment.CurrentDirectory;
+        public static int Rate = 5;
     }
 }

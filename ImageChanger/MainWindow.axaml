@@ -2,9 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" 
-		d:DesignWidth="800" 
-		d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ImageChanger.MainWindow"
         Title="ImageChanger">
 	<Grid>
@@ -13,7 +11,6 @@
 			<ColumnDefinition/>
 		</Grid.ColumnDefinitions>
 		<Grid Grid.Column="0"
-			  Grid.ColumnSpan="2"
 			  Background="Brown">
 			<Label Content="Press esc to close"
 				   FontSize="20"
@@ -30,10 +27,10 @@
 		</Grid>
 		<Grid Grid.Column="1"
 			  Background="White">
-			<!--<Image Source=""
+			<Image Name="MainImage"
 				   Stretch="Fill">
-			</Image>-->
-			<Button Content="Import"
+			</Image>
+			<Button Content="TEST"
 					Width="120"
 					Height="120"
 					Click="OnImportButtonClick">

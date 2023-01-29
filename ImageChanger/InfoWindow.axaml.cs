@@ -1,6 +1,5 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace ImageChanger
 {
@@ -9,13 +8,15 @@ namespace ImageChanger
         public InfoWindow()
         {
             InitializeComponent();
-            this.SizeToContent = SizeToContent.Height;
         }
         public InfoWindow(string str)
         {
             InitializeComponent();
             InfoTB.Text = str;
             this.SizeToContent = SizeToContent.Height;
+            if (str.Length < 150)
+                this.Width = str.Length + 150;
+
         }
         private void OnCloseButtonClick(object sender, RoutedEventArgs e)
         {

@@ -23,23 +23,32 @@ namespace ImageChanger
         public string GetPrivateString(string aKey, string aSection = "")
         {
             string result = "";
-            FileInfo ini = new FileInfo(path);
-            if (ini.Exists)
+            try
             {
-                StreamReader sr = new StreamReader(path);
-                while (!sr.EndOfStream)
+                FileInfo ini = new FileInfo(path);
+                if (ini.Exists)
                 {
-                    string str = sr.ReadLine();
-                    if (str.StartsWith("#"))
-                        continue;
-                    else
+                    StreamReader sr = new StreamReader(path);
+                    while (!sr.EndOfStream)
                     {
-                        string key = str.Substring(0, str.IndexOf("="));
-                        if(key == aKey)
-                            result = str.Substring(str.IndexOf("=")+1, str.Length - str.IndexOf("=")-1);
+                        string str = sr.ReadLine();
+                        if (str.StartsWith("#"))
+                            continue;
+                        else
+                        {
+                            string key = str.Substring(0, str.IndexOf("="));
+                            if (key == aKey)
+                                result = str.Substring(str.IndexOf("=") + 1, str.Length - str.IndexOf("=") - 1);
+                        }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                new InfoWindow(ex.Message).Show();
+                return "";
+            }
+
 
             //Вернуть полученное значение
             return result;
