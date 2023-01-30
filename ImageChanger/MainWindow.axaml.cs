@@ -10,6 +10,7 @@ using Avalonia.Interactivity;
 using System.Linq;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
+using System.Threading.Tasks;
 
 namespace ImageChanger
 {
@@ -49,7 +50,7 @@ namespace ImageChanger
         }
         private void OSDefinition()
         {
-            new InfoWindow(Environment.OSVersion.ToString()).Show();
+            //new InfoWindow(Environment.OSVersion.ToString()).Show();
             if (Environment.OSVersion.ToString().Substring(0, 9) == "Microsoft")
                 Settings.OS = "Windows";
             else if (Environment.OSVersion.ToString().Substring(0, 4) == "Unix")
@@ -85,17 +86,21 @@ namespace ImageChanger
         {
 
         }
-
         private void PictureUpdater()
         {
-            //while (true)
-            //{
-                Dispatcher.UIThread.InvokeAsync(new Action(() =>
+            Dispatcher.UIThread.Post(() => LongRunningTask(), DispatcherPriority.Background);
+        }
+        private async Task LongRunningTask()
+        {
+            while (true)
+            {
+                foreach (var item in pictures)
                 {
-                    MainImage.Source = new Bitmap(pictures.FirstOrDefault());
-                }));
-                //Thread.Sleep(5000);
-            //}
+                    MainImage.Source = new Bitmap(item);
+                    await Task.Delay(Settings.Rate*1000);
+                }
+
+            }
         }
         private void GetAllPictures()
         {
@@ -117,7 +122,8 @@ namespace ImageChanger
         private void OnImportButtonClick(object sender, RoutedEventArgs e)
         {
             //ImportSettings();
-            GetAllPictures();
+            //GetAllPictures();
+            PictureUpdater();
         }
     }
 }
