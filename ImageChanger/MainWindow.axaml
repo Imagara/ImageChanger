@@ -7,7 +7,7 @@
         Title="ImageChanger">
 	<Grid>
 		<Grid.ColumnDefinitions>
-			<ColumnDefinition Width="25"/>
+			<ColumnDefinition Width="0.03*"/>
 			<ColumnDefinition/>
 		</Grid.ColumnDefinitions>
 		<Grid Grid.Column="0"

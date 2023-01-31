@@ -1,13 +1,5 @@
-﻿using Avalonia.Controls.Shapes;
-using Avalonia.Media.TextFormatting.Unicode;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ImageChanger
 {
@@ -31,7 +23,8 @@ namespace ImageChanger
                     StreamReader sr = new StreamReader(path);
                     while (!sr.EndOfStream)
                     {
-                        string str = sr.ReadLine();
+                        string str = sr.ReadLine().Replace(" ","");
+
                         if (str.StartsWith("#"))
                             continue;
                         else

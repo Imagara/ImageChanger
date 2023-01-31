@@ -1,11 +1,7 @@
 using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
 using System;
-using System.Threading;
-using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography.X509Certificates;
 using Avalonia.Interactivity;
 using System.Linq;
 using Avalonia.Media.Imaging;
@@ -17,36 +13,29 @@ namespace ImageChanger
     public partial class MainWindow : Window
     {
         private static List<string> pictures = new List<string>();
-        private static string[] picturess = new string[100];
+
         public MainWindow()
         {
             InitializeComponent();
-            Awake();
             Start();
-        }
-        private void Awake()
-        {
-            OSDefinition();
-            ImportSettings();
         }
         private void Start()
         {
-            if (Settings.Mode == 1)
+            OSDefinition();
+            ImportSettings();
+            GetAllPictures();
+            switch (Settings.Mode)
             {
-
+                case 1:
+                    MainImage.Source = pictures.Count > 0 ? new Bitmap(pictures.LastOrDefault()) : null;
+                    break;
+                case 2:
+                    Dispatcher.UIThread.Post(() => SecondModeCycle(), DispatcherPriority.Background);
+                    break;
+                default:
+                    new InfoWindow($"Режим не найден. ({Settings.Mode})").Show();
+                    break;
             }
-            else if (Settings.Mode == 2)
-            {
-                GetAllPictures();
-                PictureUpdater();
-            }
-            else
-            {
-                new InfoWindow("Режим не найден.").Show();
-            }
-
-
-            //new TempWindow().Show();
         }
         private void OSDefinition()
         {
@@ -58,27 +47,21 @@ namespace ImageChanger
         }
         private void ImportSettings()
         {
-            if (Settings.OS == "Windows")
+            try
             {
+                string path = Environment.CurrentDirectory + "\\settings.ini";
+                INIManagerV manager = new INIManagerV(path);
 
-                string pathWin = Environment.CurrentDirectory + "\\settings.ini";
-                INIManagerV manager = new INIManagerV(pathWin);
-
-                Settings.Mode = Int32.Parse(manager.GetPrivateString("mode"));
-                Settings.Rate = Int32.Parse(manager.GetPrivateString("rate"));
-                //Settings.PicturesDirectoryPath = manager.GetPrivateString("picdirectory");
-
-                //new InfoWindow(Settings.Mode.ToString()).Show();
-
+                //Импорт настроек из ini файла.
+                Byte temp;
+                Settings.Mode = Byte.TryParse(manager.GetPrivateString("mode"), out temp) ? temp : Settings.Mode;
+                Settings.Rate = Byte.TryParse(manager.GetPrivateString("rate"), out temp) ? temp : Settings.Rate;
+                Settings.PicturesDirectoryPath = manager.GetPrivateString("picdirectory").Trim() != string.Empty ? manager.GetPrivateString("mode") : Settings.PicturesDirectoryPath;
+                Settings.Extensions = manager.GetPrivateString("ext") != string.Empty ? manager.GetPrivateString("ext").Split('/') : Settings.Extensions;
             }
-            else if (Settings.OS == "Unix")
+            catch (Exception ex)
             {
-                return;
-            }
-            else
-            {
-                new InfoWindow(Environment.OSVersion.ToString()).Show();
-                return;
+                new InfoWindow(ex.Message).Show();
             }
 
         }
@@ -86,44 +69,45 @@ namespace ImageChanger
         {
 
         }
-        private void PictureUpdater()
-        {
-            Dispatcher.UIThread.Post(() => LongRunningTask(), DispatcherPriority.Background);
-        }
-        private async Task LongRunningTask()
+        private async Task SecondModeCycle()
         {
             while (true)
             {
+                if (pictures.Count == 0)
+                    break;
                 foreach (var item in pictures)
                 {
                     MainImage.Source = new Bitmap(item);
-                    await Task.Delay(Settings.Rate*1000);
+                    await Task.Delay(Settings.Rate * 1000);
                 }
-
             }
         }
         private void GetAllPictures()
         {
-            string str = "";
 
             pictures.Clear();
 
-            string[] extensions = { ".png", ".jpeg", ".jpg", ".wav", ".bmp", ".tiff", ".jfif" };
 
             foreach (string file in Directory.EnumerateFiles(Settings.PicturesDirectoryPath, "*.*", SearchOption.AllDirectories)
-                .Where(item => extensions.Any(ext => ext == System.IO.Path.GetExtension(item))))
+                .Where(item => Settings.Extensions.Any(ext => '.' + ext == Path.GetExtension(item))))
             {
                 pictures.Add(file);
-                str += file + "\n";
             }
 
-            new InfoWindow(str).Show();
+            //new InfoWindow(string.Join("\n", pictures)).Show();
         }
         private void OnImportButtonClick(object sender, RoutedEventArgs e)
         {
             //ImportSettings();
             //GetAllPictures();
-            PictureUpdater();
+            //Dispatcher.UIThread.Post(() => SecondModeCycle(), DispatcherPriority.Background);
+            new InfoWindow("Current settings:\n" +
+                $"OS:{Settings.OS}\n" +
+                $"Mode:{Settings.Mode}\n" +
+                $"Rate:{Settings.Rate}sec\n" +
+                $"PictureDirectory:{Settings.PicturesDirectoryPath}\n" +
+                $"FileExtensions:{string.Join("/", Settings.Extensions)}" +
+                $"\n\n{string.Join("\n", pictures)}").Show();
         }
     }
 }
