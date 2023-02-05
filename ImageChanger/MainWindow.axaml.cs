@@ -8,26 +8,34 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Drawing.Text;
+using Avalonia.Platform;
 
 namespace ImageChanger
 {
     public partial class MainWindow : Window
     {
-        private static List<string> pictures = new List<string>();
-
-        //public Image SelectedImage { get; set; }
-
+        private List<string> pictures = new List<string>();
+        private int displayNum = 1;
+        public Settings settings = new();
         public MainWindow()
         {
             InitializeComponent();
             Start();
         }
+
+        public MainWindow(int aDisplayNum)
+        {
+            InitializeComponent();
+            displayNum = aDisplayNum;
+            Start();
+        }
         private void Start()
         {
-            OSDefinition();
+            this.Title = $"Display #{displayNum}"; //Test
             ImportSettings(); 
             GetAllPictures();
-            switch (Settings.Mode)
+            switch (settings.Mode)
             {
                 case 1:
                     MainImage.Source = pictures.Count > 0 ? new Bitmap(pictures.LastOrDefault()) : null;
@@ -36,26 +44,18 @@ namespace ImageChanger
                     Dispatcher.UIThread.Post(() => SecondModeCycle(), DispatcherPriority.Background);
                     break;
                 default:
-                    new InfoWindow($"Режим не найден. ({Settings.Mode})").Show();
+                    new InfoWindow($"Режим не найден. ({settings.Mode})").Show();
                     break;
             }
-        }
-        private void OSDefinition()
-        {
-            //new InfoWindow(Environment.OSVersion.ToString()).Show();
-            if (Environment.OSVersion.ToString().Substring(0, 9) == "Microsoft")
-                Settings.OS = "Windows";
-            else if (Environment.OSVersion.ToString().Substring(0, 4) == "Unix")
-                Settings.OS = "Unix";
         }
         private void ImportSettings()
         {
             try
             {
                 string path;
-                if (Settings.OS == "Windows")
+                if (MainSettings.OS == "Windows")
                     path = Environment.CurrentDirectory + "\\settings.ini";
-                else if (Settings.OS == "Unix")
+                else if (MainSettings.OS == "Unix")
                     path = Environment.CurrentDirectory + "/settings.ini";
                 else
                     return;
@@ -63,10 +63,10 @@ namespace ImageChanger
 
                 //Импорт настроек из ini файла.
                 Byte temp;
-                Settings.Mode = Byte.TryParse(manager.GetPrivateString("display1", "mode"), out temp) ? temp : Settings.Mode;
-                Settings.Rate = Byte.TryParse(manager.GetPrivateString("display1", "rate"), out temp) ? temp : Settings.Rate;
-                Settings.PicturesDirectoryPath = manager.GetPrivateString("display1", "picdirectory").Trim() != string.Empty ? manager.GetPrivateString("display1", "picdirectory") : Settings.PicturesDirectoryPath;
-                Settings.Extensions = manager.GetPrivateString("display1", "ext") != string.Empty ? manager.GetPrivateString("display1", "ext").Split('/') : Settings.Extensions;
+                settings.Mode = Byte.TryParse(manager.GetPrivateString($"display{displayNum}", "mode"), out temp) ? temp : settings.Mode;
+                settings.Rate = Byte.TryParse(manager.GetPrivateString($"display{displayNum}", "rate"), out temp) ? temp : settings.Rate;
+                settings.PicturesDirectoryPath = manager.GetPrivateString($"display{displayNum}", "picdirectory").Trim() != string.Empty ? manager.GetPrivateString($"display{displayNum}", "picdirectory") : settings.PicturesDirectoryPath;
+                settings.Extensions = manager.GetPrivateString($"display{displayNum}", "ext") != string.Empty ? manager.GetPrivateString($"display{displayNum}", "ext").Split('/') : settings.Extensions;
             }
             catch (Exception ex)
             {
@@ -78,7 +78,8 @@ namespace ImageChanger
         {
 
         }
-        private static async Task SecondModeCycle()
+
+        private async Task SecondModeCycle()
         {
             while (true)
             {
@@ -86,8 +87,8 @@ namespace ImageChanger
                     break;
                 foreach (var item in pictures)
                 {
-                    //MainImage.Source = new Bitmap(item);
-                    await Task.Delay(Settings.Rate * 1000);
+                    MainImage.Source = new Bitmap(item);
+                    await Task.Delay(settings.Rate * 1000);
                 }
             }
         }
@@ -97,13 +98,9 @@ namespace ImageChanger
             pictures.Clear();
 
 
-            foreach (string file in Directory.EnumerateFiles(Settings.PicturesDirectoryPath, "*.*", SearchOption.AllDirectories)
-                .Where(item => Settings.Extensions.Any(ext => '.' + ext == Path.GetExtension(item))))
-            {
+            foreach (string file in Directory.EnumerateFiles(settings.PicturesDirectoryPath, "*.*", SearchOption.AllDirectories)
+                .Where(item => settings.Extensions.Any(ext => '.' + ext == Path.GetExtension(item))))
                 pictures.Add(file);
-            }
-
-            //new InfoWindow(string.Join("\n", pictures)).Show();
         }
         private void OnImportButtonClick(object sender, RoutedEventArgs e)
         {
@@ -111,11 +108,11 @@ namespace ImageChanger
             //GetAllPictures();
             //Dispatcher.UIThread.Post(() => SecondModeCycle(), DispatcherPriority.Background);
             new InfoWindow("Current settings:\n" +
-                $"OS:{Settings.OS}\n" +
-                $"Mode:{Settings.Mode}\n" +
-                $"Rate:{Settings.Rate}sec\n" +
-                $"PictureDirectory:{Settings.PicturesDirectoryPath}\n" +
-                $"FileExtensions:{string.Join("/", Settings.Extensions)}" +
+                $"OS:{MainSettings.OS}\n" +
+                $"Mode:{settings.Mode}\n" +
+                $"Rate:{settings.Rate}sec\n" +
+                $"PictureDirectory:{settings.PicturesDirectoryPath}\n" +
+                $"FileExtensions:{string.Join("/", settings.Extensions)}" +
                 $"\n\n{string.Join("\n", pictures)}").Show();
         }
     }

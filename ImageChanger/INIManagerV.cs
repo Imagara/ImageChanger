@@ -17,10 +17,10 @@ namespace ImageChanger
             string result = "";
             try
             {
-                FileInfo ini = new FileInfo(path);
+                FileInfo ini = new(path);
                 if (ini.Exists)
                 {
-                    StreamReader sr = new StreamReader(path);
+                    StreamReader sr = new(path);
 
                     bool isDesiredSection = false;
 
@@ -71,6 +71,6 @@ namespace ImageChanger
         public string Path { get { return path; } set { path = value; } }
 
         //Поля класса
-        private string path = Environment.CurrentDirectory + "\\settings.ini"; //Для хранения пути к INI-файлу
+        private string path; //Для хранения пути к INI-файлу
     }
 }
