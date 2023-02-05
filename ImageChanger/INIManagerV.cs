@@ -12,7 +12,7 @@ namespace ImageChanger
         }
 
         //Возвращает значение из INI-файла (по указанным секции и ключу) 
-        public string GetPrivateString(string aKey, string aSection = "")
+        public string GetPrivateString(string aSection, string aKey)
         {
             string result = "";
             try
@@ -21,11 +21,23 @@ namespace ImageChanger
                 if (ini.Exists)
                 {
                     StreamReader sr = new StreamReader(path);
+
+                    bool isDesiredSection = false;
+
                     while (!sr.EndOfStream)
                     {
-                        string str = sr.ReadLine().Replace(" ","");
+                        string str = sr.ReadLine().Replace(" ", "");
 
-                        if (str.StartsWith("#"))
+                        if (str == $"[{aSection}]")
+                            isDesiredSection = true;
+                        else if(str.IndexOf("[") != -1)
+                            isDesiredSection = false;
+
+                        if (str.StartsWith("#") ||
+                            !isDesiredSection ||
+                            str == string.Empty ||
+                            str.IndexOf("=") == -1 ||
+                            str.Length <= 3)
                             continue;
                         else
                         {
@@ -34,11 +46,12 @@ namespace ImageChanger
                                 result = str.Substring(str.IndexOf("=") + 1, str.Length - str.IndexOf("=") - 1);
                         }
                     }
+                    sr.Close();
                 }
             }
             catch (Exception ex)
             {
-                new InfoWindow(ex.Message).Show();
+                new InfoWindow("Ошибка при чтении ini файла: " + ex.Message).Show();
                 return "";
             }
 

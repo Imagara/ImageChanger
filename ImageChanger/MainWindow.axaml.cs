@@ -7,12 +7,15 @@ using System.Linq;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace ImageChanger
 {
     public partial class MainWindow : Window
     {
         private static List<string> pictures = new List<string>();
+
+        //public Image SelectedImage { get; set; }
 
         public MainWindow()
         {
@@ -22,7 +25,7 @@ namespace ImageChanger
         private void Start()
         {
             OSDefinition();
-            ImportSettings();
+            ImportSettings(); 
             GetAllPictures();
             switch (Settings.Mode)
             {
@@ -49,15 +52,21 @@ namespace ImageChanger
         {
             try
             {
-                string path = Environment.CurrentDirectory + "\\settings.ini";
+                string path;
+                if (Settings.OS == "Windows")
+                    path = Environment.CurrentDirectory + "\\settings.ini";
+                else if (Settings.OS == "Unix")
+                    path = Environment.CurrentDirectory + "/settings.ini";
+                else
+                    return;
                 INIManagerV manager = new INIManagerV(path);
 
                 //Импорт настроек из ini файла.
                 Byte temp;
-                Settings.Mode = Byte.TryParse(manager.GetPrivateString("mode"), out temp) ? temp : Settings.Mode;
-                Settings.Rate = Byte.TryParse(manager.GetPrivateString("rate"), out temp) ? temp : Settings.Rate;
-                Settings.PicturesDirectoryPath = manager.GetPrivateString("picdirectory").Trim() != string.Empty ? manager.GetPrivateString("mode") : Settings.PicturesDirectoryPath;
-                Settings.Extensions = manager.GetPrivateString("ext") != string.Empty ? manager.GetPrivateString("ext").Split('/') : Settings.Extensions;
+                Settings.Mode = Byte.TryParse(manager.GetPrivateString("display1", "mode"), out temp) ? temp : Settings.Mode;
+                Settings.Rate = Byte.TryParse(manager.GetPrivateString("display1", "rate"), out temp) ? temp : Settings.Rate;
+                Settings.PicturesDirectoryPath = manager.GetPrivateString("display1", "picdirectory").Trim() != string.Empty ? manager.GetPrivateString("display1", "picdirectory") : Settings.PicturesDirectoryPath;
+                Settings.Extensions = manager.GetPrivateString("display1", "ext") != string.Empty ? manager.GetPrivateString("display1", "ext").Split('/') : Settings.Extensions;
             }
             catch (Exception ex)
             {
@@ -69,7 +78,7 @@ namespace ImageChanger
         {
 
         }
-        private async Task SecondModeCycle()
+        private static async Task SecondModeCycle()
         {
             while (true)
             {
@@ -77,7 +86,7 @@ namespace ImageChanger
                     break;
                 foreach (var item in pictures)
                 {
-                    MainImage.Source = new Bitmap(item);
+                    //MainImage.Source = new Bitmap(item);
                     await Task.Delay(Settings.Rate * 1000);
                 }
             }
