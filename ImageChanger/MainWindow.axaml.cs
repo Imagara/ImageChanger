@@ -7,32 +7,30 @@ using System.Linq;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Drawing.Text;
-using Avalonia.Platform;
 
 namespace ImageChanger
 {
     public partial class MainWindow : Window
     {
         private List<string> pictures = new List<string>();
-        private int displayNum = 1;
+        private int screenNum = 1;
         public Settings settings = new();
+
         public MainWindow()
         {
             InitializeComponent();
             Start();
         }
 
-        public MainWindow(int aDisplayNum)
+        public MainWindow(int _screenNum)
         {
             InitializeComponent();
-            displayNum = aDisplayNum;
+            screenNum = _screenNum;
             Start();
         }
         private void Start()
         {
-            this.Title = $"Display #{displayNum}"; //Test
+            this.Title = $"Screen #{screenNum}";
             ImportSettings(); 
             GetAllPictures();
             switch (settings.Mode)
@@ -41,7 +39,7 @@ namespace ImageChanger
                     MainImage.Source = pictures.Count > 0 ? new Bitmap(pictures.LastOrDefault()) : null;
                     break;
                 case 2:
-                    Dispatcher.UIThread.Post(() => SecondModeCycle(), DispatcherPriority.Background);
+                    Dispatcher.UIThread.Post(action: () => SecondModeCycle(), priority: DispatcherPriority.Background);
                     break;
                 default:
                     new InfoWindow($"Режим не найден. ({settings.Mode})").Show();
@@ -52,21 +50,14 @@ namespace ImageChanger
         {
             try
             {
-                string path;
-                if (MainSettings.OS == "Windows")
-                    path = Environment.CurrentDirectory + "\\settings.ini";
-                else if (MainSettings.OS == "Unix")
-                    path = Environment.CurrentDirectory + "/settings.ini";
-                else
-                    return;
-                INIManagerV manager = new INIManagerV(path);
+                INIManager manager = new INIManager(MainSettings.INIPath);
 
                 //Импорт настроек из ini файла.
                 Byte temp;
-                settings.Mode = Byte.TryParse(manager.GetPrivateString($"display{displayNum}", "mode"), out temp) ? temp : settings.Mode;
-                settings.Rate = Byte.TryParse(manager.GetPrivateString($"display{displayNum}", "rate"), out temp) ? temp : settings.Rate;
-                settings.PicturesDirectoryPath = manager.GetPrivateString($"display{displayNum}", "picdirectory").Trim() != string.Empty ? manager.GetPrivateString($"display{displayNum}", "picdirectory") : settings.PicturesDirectoryPath;
-                settings.Extensions = manager.GetPrivateString($"display{displayNum}", "ext") != string.Empty ? manager.GetPrivateString($"display{displayNum}", "ext").Split('/') : settings.Extensions;
+                settings.Mode = Byte.TryParse(manager.GetPrivateString($"display{screenNum}", "mode"), out temp) ? temp : settings.Mode;
+                settings.Rate = Byte.TryParse(manager.GetPrivateString($"display{screenNum}", "rate"), out temp) ? temp : settings.Rate;
+                settings.PicturesDirectoryPath = manager.GetPrivateString($"display{screenNum}", "picdirectory").Trim() != string.Empty ? manager.GetPrivateString($"display{screenNum}", "picdirectory") : settings.PicturesDirectoryPath;
+                settings.Extensions = manager.GetPrivateString($"display{screenNum}", "ext") != string.Empty ? manager.GetPrivateString($"display{screenNum}", "ext").Split('/') : settings.Extensions;
             }
             catch (Exception ex)
             {
@@ -108,6 +99,7 @@ namespace ImageChanger
             //GetAllPictures();
             //Dispatcher.UIThread.Post(() => SecondModeCycle(), DispatcherPriority.Background);
             new InfoWindow("Current settings:\n" +
+                $"Screen:{screenNum}\n" +
                 $"OS:{MainSettings.OS}\n" +
                 $"Mode:{settings.Mode}\n" +
                 $"Rate:{settings.Rate}sec\n" +

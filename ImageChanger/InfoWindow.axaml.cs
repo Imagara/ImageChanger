@@ -15,8 +15,7 @@ namespace ImageChanger
             InfoTB.Text = str;
             this.SizeToContent = SizeToContent.Height;
             if (str.Length < 150)
-                this.Width = str.Length + 150;
-
+                this.Width = str.Length + 200;
         }
         private void OnCloseButtonClick(object sender, RoutedEventArgs e)
         {

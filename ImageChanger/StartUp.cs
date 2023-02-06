@@ -17,19 +17,67 @@ namespace ImageChanger
     {
         public StartUp()
         {
-            
+            OSDefinition();
+            INIPathDefinition();
+            ImportMainSettings();
+            ScreensDefinition();
+            OpenWindows();
         }
         public void ScreensDefinition()
         {
             MainSettings.AllScreens = Screens.All;
         }
-        public void ShowWindow() //Test
+        private void ImportMainSettings()
         {
-            MainWindow mw = new();
- 
-            mw.Position = new Avalonia.PixelPoint(1920,0);
-            mw.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            mw.Show();
+            try
+            {
+                INIManager manager = new INIManager(MainSettings.INIPath);
+                MainSettings.ScreensInUse = manager.GetPrivateString($"main", "screensinuse") != string.Empty ? manager.GetPrivateString($"main", "screensinuse").
+                    Split('/').Where(i => !string.IsNullOrWhiteSpace(i)).
+                    Select(i => byte.Parse(i)).ToArray() :
+                    new byte[] { 1 }; //temp
+
+            }
+            catch (Exception ex)
+            {
+                new InfoWindow(ex.Message).Show();
+            }
+
+        }
+        private void OpenWindows()
+        {
+            int xPos = 0, index = 1;
+            foreach (var item in MainSettings.AllScreens)
+            {
+                xPos += item.WorkingArea.X;
+                if (MainSettings.ScreensInUse.Any(x => x == index))
+                    ShowWindow(xPos, index);
+                index++;
+            }
+        }
+        private void ShowWindow(int xPos, int screenNum)
+        {
+            new MainWindow(screenNum)
+            {
+                Position = new Avalonia.PixelPoint(xPos, 0),
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            }.Show();
+        }
+        private void OSDefinition()
+        {
+            if (Environment.OSVersion.ToString().Substring(0, 9) == "Microsoft")
+                MainSettings.OS = "Windows";
+            else if (Environment.OSVersion.ToString().Substring(0, 4) == "Unix")
+                MainSettings.OS = "Unix";
+        }
+        private void INIPathDefinition()
+        {
+            if (MainSettings.OS == "Windows")
+                MainSettings.INIPath = Environment.CurrentDirectory + "\\settings.ini";
+            else if (MainSettings.OS == "Unix")
+                MainSettings.INIPath = Environment.CurrentDirectory + "/settings.ini";
+            else
+                new InfoWindow("Ошибка определения пути к ini файлу.").Show();
         }
     }
 }

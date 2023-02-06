@@ -35,8 +35,8 @@
 			<Button Content="TEST"
 					Width="120"
 					Height="120"
-					Click="OnImportButtonClick">
-
+					Click="OnImportButtonClick"
+					IsVisible="False">
 			</Button>
 		</Grid>
 	</Grid>
