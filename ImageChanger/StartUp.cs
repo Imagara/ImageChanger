@@ -23,27 +23,28 @@ namespace ImageChanger
             ScreensDefinition();
             OpenWindows();
         }
+
         public void ScreensDefinition()
         {
             MainSettings.AllScreens = Screens.All;
         }
+
         private void ImportMainSettings()
         {
             try
             {
                 INIManager manager = new INIManager(MainSettings.INIPath);
-                MainSettings.ScreensInUse = manager.GetPrivateString($"main", "screensinuse") != string.Empty ? manager.GetPrivateString($"main", "screensinuse").
-                    Split('/').Where(i => !string.IsNullOrWhiteSpace(i)).
-                    Select(i => byte.Parse(i)).ToArray() :
-                    new byte[] { 1 }; //temp
-
+                MainSettings.ScreensInUse = manager.GetPrivateString($"main", "screensinuse") != string.Empty
+                    ? manager.GetPrivateString($"main", "screensinuse").Split('/')
+                        .Where(i => !string.IsNullOrWhiteSpace(i)).Select(i => byte.Parse(i)).ToArray()
+                    : new byte[] { 1 };
             }
             catch (Exception ex)
             {
                 new InfoWindow(ex.Message).Show();
             }
-
         }
+
         private void OpenWindows()
         {
             int xPos = 0, index = 1;
@@ -55,6 +56,7 @@ namespace ImageChanger
                 index++;
             }
         }
+
         private void ShowWindow(int xPos, int screenNum)
         {
             new MainWindow(screenNum)
@@ -63,6 +65,7 @@ namespace ImageChanger
                 WindowStartupLocation = WindowStartupLocation.CenterScreen
             }.Show();
         }
+
         private void OSDefinition()
         {
             if (Environment.OSVersion.ToString().Substring(0, 9) == "Microsoft")
@@ -70,6 +73,7 @@ namespace ImageChanger
             else if (Environment.OSVersion.ToString().Substring(0, 4) == "Unix")
                 MainSettings.OS = "Unix";
         }
+
         private void INIPathDefinition()
         {
             if (MainSettings.OS == "Windows")

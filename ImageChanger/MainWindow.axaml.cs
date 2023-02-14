@@ -7,6 +7,7 @@ using System.Linq;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using System.Threading.Tasks;
+using Avalonia.Input;
 
 namespace ImageChanger
 {
@@ -28,11 +29,14 @@ namespace ImageChanger
             screenNum = _screenNum;
             Start();
         }
+
         private void Start()
         {
             this.Title = $"Screen #{screenNum}";
-            ImportSettings(); 
+            ImportSettings();
             GetAllPictures();
+            if (pictures.Count == 0)
+                return;
             switch (settings.Mode)
             {
                 case 1:
@@ -40,34 +44,44 @@ namespace ImageChanger
                     break;
                 case 2:
                     Dispatcher.UIThread.Post(action: () => SecondModeCycle(), priority: DispatcherPriority.Background);
+                    HelpLabel.IsVisible = false;
                     break;
                 default:
-                    new InfoWindow($"Режим не найден. ({settings.Mode})").Show();
+                    new InfoWindow($"пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ. ({settings.Mode})").Show();
                     break;
             }
         }
+
         private void ImportSettings()
         {
             try
             {
                 INIManager manager = new INIManager(MainSettings.INIPath);
 
-                //Импорт настроек из ini файла.
+                //пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ ini пїЅпїЅпїЅпїЅпїЅ.
                 Byte temp;
-                settings.Mode = Byte.TryParse(manager.GetPrivateString($"display{screenNum}", "mode"), out temp) ? temp : settings.Mode;
-                settings.Rate = Byte.TryParse(manager.GetPrivateString($"display{screenNum}", "rate"), out temp) ? temp : settings.Rate;
-                settings.PicturesDirectoryPath = manager.GetPrivateString($"display{screenNum}", "picdirectory").Trim() != string.Empty ? manager.GetPrivateString($"display{screenNum}", "picdirectory") : settings.PicturesDirectoryPath;
-                settings.Extensions = manager.GetPrivateString($"display{screenNum}", "ext") != string.Empty ? manager.GetPrivateString($"display{screenNum}", "ext").Split('/') : settings.Extensions;
+                settings.Mode = Byte.TryParse(manager.GetPrivateString($"display{screenNum}", "mode"), out temp)
+                    ? temp
+                    : settings.Mode;
+                settings.Rate = Byte.TryParse(manager.GetPrivateString($"display{screenNum}", "rate"), out temp)
+                    ? temp
+                    : settings.Rate;
+                settings.PicturesDirectoryPath =
+                    manager.GetPrivateString($"display{screenNum}", "picdirectory").Trim() != string.Empty
+                        ? manager.GetPrivateString($"display{screenNum}", "picdirectory")
+                        : settings.PicturesDirectoryPath;
+                settings.Extensions = manager.GetPrivateString($"display{screenNum}", "ext") != string.Empty
+                    ? manager.GetPrivateString($"display{screenNum}", "ext").Split('/')
+                    : settings.Extensions;
             }
             catch (Exception ex)
             {
                 new InfoWindow(ex.Message).Show();
             }
-
         }
+
         private void ExportSettings()
         {
-
         }
 
         private async Task SecondModeCycle()
@@ -83,29 +97,37 @@ namespace ImageChanger
                 }
             }
         }
+
         private void GetAllPictures()
         {
-
             pictures.Clear();
 
 
-            foreach (string file in Directory.EnumerateFiles(settings.PicturesDirectoryPath, "*.*", SearchOption.AllDirectories)
-                .Where(item => settings.Extensions.Any(ext => '.' + ext == Path.GetExtension(item))))
+            foreach (string file in Directory
+                         .EnumerateFiles(settings.PicturesDirectoryPath, "*.*", SearchOption.AllDirectories)
+                         .Where(item => settings.Extensions.Any(ext => '.' + ext == Path.GetExtension(item))))
                 pictures.Add(file);
         }
-        private void OnImportButtonClick(object sender, RoutedEventArgs e)
+
+        private void OnTestButtonClick(object sender, RoutedEventArgs e)
         {
             //ImportSettings();
             //GetAllPictures();
             //Dispatcher.UIThread.Post(() => SecondModeCycle(), DispatcherPriority.Background);
             new InfoWindow("Current settings:\n" +
-                $"Screen:{screenNum}\n" +
-                $"OS:{MainSettings.OS}\n" +
-                $"Mode:{settings.Mode}\n" +
-                $"Rate:{settings.Rate}sec\n" +
-                $"PictureDirectory:{settings.PicturesDirectoryPath}\n" +
-                $"FileExtensions:{string.Join("/", settings.Extensions)}" +
-                $"\n\n{string.Join("\n", pictures)}").Show();
+                           $"Screen:{screenNum}\n" +
+                           $"OS:{MainSettings.OS}\n" +
+                           $"Mode:{settings.Mode}\n" +
+                           $"Rate:{settings.Rate}sec\n" +
+                           $"PictureDirectory:{settings.PicturesDirectoryPath}\n" +
+                           $"FileExtensions:{string.Join("/", settings.Extensions)}" +
+                           $"\n\n{string.Join("\n", pictures)}").Show();
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+                this.Close();
         }
     }
 }
