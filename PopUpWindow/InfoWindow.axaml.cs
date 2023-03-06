@@ -1,7 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 
-namespace ImageChanger
+namespace PopUpWindow
 {
     public partial class InfoWindow : Window
     {

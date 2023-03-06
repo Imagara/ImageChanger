@@ -1,7 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Text.RegularExpressions;
 
-namespace ImageChanger
+namespace PopUpWindow
 {
     public class INIManager
     {
@@ -15,6 +16,7 @@ namespace ImageChanger
         public string GetPrivateString(string aSection, string aKey)
         {
             string result = "";
+            Regex regex = new Regex(@"([A-Za-z]+=[0-9]+)|([A-Za-z]+=[A-Za-z]+)|([[0-9A-Za-z]+])", RegexOptions.Compiled);
             try
             {
                 FileInfo ini = new(path);
@@ -26,20 +28,22 @@ namespace ImageChanger
 
                     while (!sr.EndOfStream)
                     {
-                        string str = sr.ReadLine().Replace(" ", "");
-
+                        string  str = sr.ReadLine().ToLower().Replace(" ", "");
+                        
+                        new InfoWindow(str + " - " + regex.IsMatch(str)).Show();
+                        
+                        if(str.StartsWith("#") ||
+                           !regex.IsMatch(str))
+                            continue;
+                        
+                        
                         if (str == $"[{aSection}]")
                             isDesiredSection = true;
                         else if(str.IndexOf("[") != -1)
                             isDesiredSection = false;
+                        
 
-                        if (str.StartsWith("#") ||
-                            !isDesiredSection ||
-                            str == string.Empty ||
-                            str.IndexOf("=") == -1 ||
-                            str.Length <= 3)
-                            continue;
-                        else
+                        if (isDesiredSection)
                         {
                             string key = str.Substring(0, str.IndexOf("="));
                             if (key == aKey)
@@ -51,11 +55,10 @@ namespace ImageChanger
             }
             catch (Exception ex)
             {
-                new InfoWindow("Ошибка при чтении ini файла: " + ex.Message).Show();
+                //new InfoWindow($"Error while reading ini file (key = {aKey}): " + ex.Message).Show();
                 return "";
             }
-
-
+            
             //Вернуть полученное значение
             return result;
         }

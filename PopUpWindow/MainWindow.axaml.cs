@@ -8,14 +8,15 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using System.Threading.Tasks;
 using Avalonia.Input;
+using Avalonia.Markup.Xaml;
 
-namespace ImageChanger
+namespace PopUpWindow
 {
     public partial class MainWindow : Window
     {
         private List<string> pictures = new List<string>();
         private int screenNum = 1;
-        public Settings settings = new();
+        private Settings settings = new();
 
         public MainWindow()
         {
@@ -44,10 +45,10 @@ namespace ImageChanger
                     break;
                 case 2:
                     Dispatcher.UIThread.Post(action: () => SecondModeCycle(), priority: DispatcherPriority.Background);
-                    HelpLabel.IsVisible = false;
+                    HelpGrid.IsVisible = false;
                     break;
                 default:
-                    new InfoWindow($"����� �� ������. ({settings.Mode})").Show();
+                    new InfoWindow($". ({settings.Mode})").Show();
                     break;
             }
         }
@@ -57,8 +58,7 @@ namespace ImageChanger
             try
             {
                 INIManager manager = new INIManager(MainSettings.INIPath);
-
-                //������ �������� �� ini �����.
+                
                 Byte temp;
                 settings.Mode = Byte.TryParse(manager.GetPrivateString($"display{screenNum}", "mode"), out temp)
                     ? temp
@@ -66,10 +66,10 @@ namespace ImageChanger
                 settings.Rate = Byte.TryParse(manager.GetPrivateString($"display{screenNum}", "rate"), out temp)
                     ? temp
                     : settings.Rate;
-                settings.PicturesDirectoryPath =
-                    manager.GetPrivateString($"display{screenNum}", "picdirectory").Trim() != string.Empty
-                        ? manager.GetPrivateString($"display{screenNum}", "picdirectory")
-                        : settings.PicturesDirectoryPath;
+                settings.DirectoryPath =
+                    manager.GetPrivateString($"display{screenNum}", "directory").Trim() != string.Empty
+                        ? manager.GetPrivateString($"display{screenNum}", "directory")
+                        : settings.DirectoryPath;
                 settings.Extensions = manager.GetPrivateString($"display{screenNum}", "ext") != string.Empty
                     ? manager.GetPrivateString($"display{screenNum}", "ext").Split('/')
                     : settings.Extensions;
@@ -82,6 +82,7 @@ namespace ImageChanger
 
         private void ExportSettings()
         {
+            
         }
 
         private async Task SecondModeCycle()
@@ -104,7 +105,7 @@ namespace ImageChanger
 
 
             foreach (string file in Directory
-                         .EnumerateFiles(settings.PicturesDirectoryPath, "*.*", SearchOption.AllDirectories)
+                         .EnumerateFiles(settings.DirectoryPath, "*.*", SearchOption.AllDirectories)
                          .Where(item => settings.Extensions.Any(ext => '.' + ext == Path.GetExtension(item))))
                 pictures.Add(file);
         }
@@ -119,7 +120,7 @@ namespace ImageChanger
                            $"OS:{MainSettings.OS}\n" +
                            $"Mode:{settings.Mode}\n" +
                            $"Rate:{settings.Rate}sec\n" +
-                           $"PictureDirectory:{settings.PicturesDirectoryPath}\n" +
+                           $"PictureDirectory:{settings.DirectoryPath}\n" +
                            $"FileExtensions:{string.Join("/", settings.Extensions)}" +
                            $"\n\n{string.Join("\n", pictures)}").Show();
         }

@@ -11,9 +11,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Drawing.Text;
 using Avalonia.Platform;
 
-namespace ImageChanger
+namespace PopUpWindow
 {
-    partial class StartUp : Window
+    class StartUp : Window
     {
         public StartUp()
         {
@@ -34,14 +34,15 @@ namespace ImageChanger
             try
             {
                 INIManager manager = new INIManager(MainSettings.INIPath);
-                MainSettings.ScreensInUse = manager.GetPrivateString($"main", "screensinuse") != string.Empty
-                    ? manager.GetPrivateString($"main", "screensinuse").Split('/')
+                MainSettings.ScreensInUse = manager.GetPrivateString($"main", "screens") != string.Empty
+                    ? manager.GetPrivateString($"main", "screens").Split('/')
                         .Where(i => !string.IsNullOrWhiteSpace(i)).Select(i => byte.Parse(i)).ToArray()
                     : new byte[] { 1 };
+                //MainSettings.RefreshRate = manager.GetPrivateString("main","refreshrate")
             }
             catch (Exception ex)
             {
-                new InfoWindow(ex.Message).Show();
+                new InfoWindow("Import main settings error: " + ex.Message).Show();
             }
         }
 
@@ -50,7 +51,7 @@ namespace ImageChanger
             int xPos = 0, index = 1;
             foreach (var item in MainSettings.AllScreens)
             {
-                xPos += item.WorkingArea.X;
+                xPos = item.Bounds.Position.X;
                 if (MainSettings.ScreensInUse.Any(x => x == index))
                     ShowWindow(xPos, index);
                 index++;

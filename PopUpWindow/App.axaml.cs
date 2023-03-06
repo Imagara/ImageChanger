@@ -3,7 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 
-namespace ImageChanger
+namespace PopUpWindow
 {
     public partial class App : Application
     {

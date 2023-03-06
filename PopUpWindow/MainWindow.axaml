@@ -3,24 +3,26 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="PopUpWindow.MainWindow"
         WindowState="FullScreen"
-        x:Class="ImageChanger.MainWindow"
         Title="PopUpWindow">
     <DockPanel>
-        <Label Name="HelpLabel"
+        <Grid  Name="HelpGrid"
                DockPanel.Dock="Left"
-               Content="Press esc to close"
-               FontSize="20"
-               Width="50"
-               VerticalContentAlignment="Top"
-               HorizontalContentAlignment="Center"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center">
-            <Label.RenderTransform>
-                <RotateTransform Angle="-90">
-                </RotateTransform>
-            </Label.RenderTransform>
-        </Label>
+               Width="25">
+            <Label Content="Press esc to close"
+                   FontSize="12"
+                   Width="300"
+                   VerticalContentAlignment="Top"
+                   HorizontalContentAlignment="Center"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center">
+                <Label.RenderTransform>
+                    <RotateTransform Angle="-90">
+                    </RotateTransform>
+                </Label.RenderTransform>
+            </Label>
+        </Grid>
         <Image Name="MainImage"
                DockPanel.Dock="Right"
                Stretch="Fill">

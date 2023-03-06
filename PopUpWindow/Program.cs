@@ -3,7 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using System;
 
-namespace ImageChanger
+namespace PopUpWindow
 {
     class Program
     {
