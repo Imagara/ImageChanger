@@ -5,7 +5,7 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         WindowState="FullScreen"
         x:Class="ImageChanger.MainWindow"
-        Title="ImageChanger">
+        Title="PopUpWindow">
     <DockPanel>
         <Label Name="HelpLabel"
                DockPanel.Dock="Left"

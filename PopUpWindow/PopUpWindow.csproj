@@ -8,6 +8,8 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationIcon>ico.ico</ApplicationIcon>
     <StartupObject></StartupObject>
+    <AssemblyName>PopUpWindow</AssemblyName>
+    <RootNamespace>PopUpWindow</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <None Remove=".gitignore" />
