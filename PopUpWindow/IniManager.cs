@@ -30,8 +30,7 @@ namespace PopUpWindow
                     {
                         string  str = sr.ReadLine().ToLower().Replace(" ", "");
                         
-                        new InfoWindow(str + " - " + regex.IsMatch(str)).Show();
-                        
+                        if (str.StartsWith("#") ||
                         if(str.StartsWith("#") ||
                            !regex.IsMatch(str))
                             continue;
