@@ -33,12 +33,12 @@ namespace PopUpWindow
 
         private void Start()
         {
-            this.Title = $"Screen #{screenNum}";
+            Title = $"Screen #{screenNum}";
             ImportSettings();
             GetAllPictures();
             if (pictures.Count == 0)
                 return;
-            switch (settings.Mode)
+            switch (MainSettings.Mode)
             {
                 case 1:
                     MainImage.Source = pictures.Count > 0 ? new Bitmap(pictures.LastOrDefault()) : null;
@@ -48,7 +48,7 @@ namespace PopUpWindow
                     HelpGrid.IsVisible = false;
                     break;
                 default:
-                    new InfoWindow($". ({settings.Mode})").Show();
+                    new InfoWindow($"Invalid operating mode selected").Show();
                     break;
             }
         }
@@ -57,13 +57,12 @@ namespace PopUpWindow
         {
             try
             {
-                INIManager manager = new INIManager(MainSettings.INIPath);
+                IniManager manager = new IniManager(MainSettings.IniPath);
                 
-                Byte temp;
-                settings.Mode = Byte.TryParse(manager.GetPrivateString($"display{screenNum}", "mode"), out temp)
-                    ? temp
-                    : settings.Mode;
-                settings.Rate = Byte.TryParse(manager.GetPrivateString($"display{screenNum}", "rate"), out temp)
+                //settings.Mode = Byte.TryParse(manager.GetPrivateString($"display{screenNum}", "mode"), out var temp)
+                //    ? temp
+                //    : settings.Mode;
+                settings.Rate = Byte.TryParse(manager.GetPrivateString($"display{screenNum}", "rate"), out var temp)
                     ? temp
                     : settings.Rate;
                 settings.DirectoryPath =
@@ -102,29 +101,13 @@ namespace PopUpWindow
         private void GetAllPictures()
         {
             pictures.Clear();
-
-
+            
             foreach (string file in Directory
                          .EnumerateFiles(settings.DirectoryPath, "*.*", SearchOption.AllDirectories)
                          .Where(item => settings.Extensions.Any(ext => '.' + ext == Path.GetExtension(item))))
                 pictures.Add(file);
         }
-
-        private void OnTestButtonClick(object sender, RoutedEventArgs e)
-        {
-            //ImportSettings();
-            //GetAllPictures();
-            //Dispatcher.UIThread.Post(() => SecondModeCycle(), DispatcherPriority.Background);
-            new InfoWindow("Current settings:\n" +
-                           $"Screen:{screenNum}\n" +
-                           $"OS:{MainSettings.OS}\n" +
-                           $"Mode:{settings.Mode}\n" +
-                           $"Rate:{settings.Rate}sec\n" +
-                           $"PictureDirectory:{settings.DirectoryPath}\n" +
-                           $"FileExtensions:{string.Join("/", settings.Extensions)}" +
-                           $"\n\n{string.Join("\n", pictures)}").Show();
-        }
-
+        
         protected override void OnKeyDown(KeyEventArgs e)
         {
             if (e.Key == Key.Escape)

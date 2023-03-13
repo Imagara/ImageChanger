@@ -4,10 +4,10 @@ using System.Text.RegularExpressions;
 
 namespace PopUpWindow
 {
-    public class INIManager
+    public class IniManager
     {
         //Конструктор, принимающий путь к INI-файлу
-        public INIManager(string aPath)
+        public IniManager(string aPath)
         {
             path = aPath;
         }
@@ -16,7 +16,8 @@ namespace PopUpWindow
         public string GetPrivateString(string aSection, string aKey)
         {
             string result = "";
-            Regex regex = new Regex(@"([A-Za-z]+=[0-9]+)|([A-Za-z]+=[A-Za-z]+)|([[0-9A-Za-z]+])", RegexOptions.Compiled);
+            Regex regex = new Regex(@"^([A-Za-z]+=[0-9]+)|([A-Za-z]+=[A-Za-z]+)|([A-Za-z]+=([0-1][0-9]|[2][1-3])[:./\s-][0-5][0-9])|([[0-9A-Za-z]+])",
+                RegexOptions.Compiled);
             try
             {
                 FileInfo ini = new(path);
@@ -28,27 +29,29 @@ namespace PopUpWindow
 
                     while (!sr.EndOfStream)
                     {
-                        string  str = sr.ReadLine().ToLower().Replace(" ", "");
+                        string str = sr.ReadLine()!.ToLower().Replace(" ", "");
                         
                         if (str.StartsWith("#") ||
-                        if(str.StartsWith("#") ||
-                           !regex.IsMatch(str))
+                            !regex.IsMatch(str))
                             continue;
-                        
                         
                         if (str == $"[{aSection}]")
                             isDesiredSection = true;
-                        else if(str.IndexOf("[") != -1)
+                        else if (str.IndexOf("[", StringComparison.Ordinal) != -1 && isDesiredSection)
+                            break;
+                        else if (str.IndexOf("[", StringComparison.Ordinal) != -1)
                             isDesiredSection = false;
-                        
+
 
                         if (isDesiredSection)
                         {
-                            string key = str.Substring(0, str.IndexOf("="));
+                            string key = str.Substring(0, str.IndexOf("=", StringComparison.Ordinal));
                             if (key == aKey)
-                                result = str.Substring(str.IndexOf("=") + 1, str.Length - str.IndexOf("=") - 1);
+                                result = str.Substring(str.IndexOf("=", StringComparison.Ordinal) + 1,
+                                    str.Length - str.IndexOf("=", StringComparison.Ordinal) - 1);
                         }
                     }
+
                     sr.Close();
                 }
             }
@@ -57,7 +60,7 @@ namespace PopUpWindow
                 //new InfoWindow($"Error while reading ini file (key = {aKey}): " + ex.Message).Show();
                 return "";
             }
-            
+
             //Вернуть полученное значение
             return result;
         }
@@ -66,8 +69,8 @@ namespace PopUpWindow
         public void WritePrivateString(string aSection, string aKey, string aValue)
         {
             //Записать значение в INI-файл
-
         }
+
         //Поля класса
         private string path; //Для хранения пути к INI-файлу
     }

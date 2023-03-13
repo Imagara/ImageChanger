@@ -17,7 +17,6 @@ namespace PopUpWindow
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
-                //desktop.MainWindow = new MainWindow(1);
                 new StartUp();
             }
             base.OnFrameworkInitializationCompleted();
