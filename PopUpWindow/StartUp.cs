@@ -22,7 +22,7 @@ namespace PopUpWindow
         public StartUp()
         {
             //Import main(general) settings
-            ImportMainSettings();
+            //ImportMainSettings();
 
             //Screen definition
             MainSettings.AllScreens = Screens.All;
@@ -31,7 +31,7 @@ namespace PopUpWindow
 
             if (mode == 1)
             {
-                string path = MainSettings.Directory + MainSettings.Slash + "StartUp.ini";
+                string path = MainSettings.Directory + "\\StartUp.ini";
                 FileInfo file = new(path);
 
                 if (file.Exists)
@@ -39,9 +39,12 @@ namespace PopUpWindow
                     IniManager manager = new(path);
 
                     string dateTimeStr = manager.GetPrivateString("main", "time");
+                    
+                    new InfoWindow(dateTimeStr).Show();
+                    
                     Regex timeFormat = new Regex(@"^([0-1][0-9]|[2][1-3])[:./\s-][0-5][0-9]");
 
-                    dateTimeStr = "00 00"; //temp
+                    //dateTimeStr = "00 00"; //temp
                     
                     if (timeFormat.IsMatch(dateTimeStr))
                         _targetTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,

@@ -12,11 +12,54 @@ namespace PopUpWindow
             path = aPath;
         }
 
+        public string GetPrivateString(string aKey)
+        {
+            string result = "";
+
+            Regex regex = new Regex(
+                @"^([A-Za-z]+=[0-9]+)|([A-Za-z]+=[A-Za-z]+)|([A-Za-z]+=([0-1][0-9]|[2][1-3])[:./\s-][0-5][0-9])|([[0-9A-Za-z]+])",
+                RegexOptions.Compiled);
+
+            try
+            {
+                FileInfo ini = new(path);
+                if (ini.Exists)
+                {
+                    StreamReader sr = new(path);
+                    while (!sr.EndOfStream)
+                    {
+                        string str = sr.ReadLine()!.ToLower().Replace(" ", "");
+
+                        if (str.StartsWith("#") ||
+                            !regex.IsMatch(str) ||
+                            str.IndexOf("[", StringComparison.Ordinal) != -1)
+                            continue;
+
+                        string key = str.Substring(0, str.IndexOf("=", StringComparison.Ordinal));
+
+                        if (key == aKey)
+                            result = str.Substring(str.IndexOf("=", StringComparison.Ordinal) + 1,
+                                str.Length - str.IndexOf("=", StringComparison.Ordinal) - 1);
+                    }
+
+                    sr.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                //new InfoWindow($"Error while reading ini file (key = {aKey}): " + ex.Message).Show();
+                return "";
+            }
+
+            return result;
+        }
+
         //Возвращает значение из INI-файла (по указанным секции и ключу) 
         public string GetPrivateString(string aSection, string aKey)
         {
             string result = "";
-            Regex regex = new Regex(@"^([A-Za-z]+=[0-9]+)|([A-Za-z]+=[A-Za-z]+)|([A-Za-z]+=([0-1][0-9]|[2][1-3])[:./\s-][0-5][0-9])|([[0-9A-Za-z]+])",
+            Regex regex = new Regex(
+                @"^([A-Za-z]+=[0-9]+)|([A-Za-z]+=[A-Za-z]+)|([A-Za-z]+=([0-1][0-9]|[2][1-3])[:./\s-][0-5][0-9])|([[0-9A-Za-z]+])",
                 RegexOptions.Compiled);
             try
             {
@@ -30,19 +73,22 @@ namespace PopUpWindow
                     while (!sr.EndOfStream)
                     {
                         string str = sr.ReadLine()!.ToLower().Replace(" ", "");
-                        
+
                         if (str.StartsWith("#") ||
                             !regex.IsMatch(str))
                             continue;
-                        
+
                         if (str == $"[{aSection}]")
+                        {
                             isDesiredSection = true;
-                        else if (str.IndexOf("[", StringComparison.Ordinal) != -1 && isDesiredSection)
+                            continue;
+                        }
+                        
+                        if (str.IndexOf("[", StringComparison.Ordinal) != -1 && isDesiredSection)
                             break;
-                        else if (str.IndexOf("[", StringComparison.Ordinal) != -1)
+                        if (str.IndexOf("[", StringComparison.Ordinal) != -1)
                             isDesiredSection = false;
-
-
+                        
                         if (isDesiredSection)
                         {
                             string key = str.Substring(0, str.IndexOf("=", StringComparison.Ordinal));
@@ -51,13 +97,12 @@ namespace PopUpWindow
                                     str.Length - str.IndexOf("=", StringComparison.Ordinal) - 1);
                         }
                     }
-
                     sr.Close();
                 }
             }
             catch (Exception ex)
             {
-                //new InfoWindow($"Error while reading ini file (key = {aKey}): " + ex.Message).Show();
+                new InfoWindow($"Error while reading ini file (key = {aKey}): " + ex.Message).Show();
                 return "";
             }
 

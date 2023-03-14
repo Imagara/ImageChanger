@@ -6,9 +6,8 @@ namespace PopUpWindow
 {
     public static class MainSettings
     {
-        public const char Slash = '\\';
         public static IReadOnlyList<Screen>? AllScreens { get; set; }
-        public static string IniPath { get;} = Environment.CurrentDirectory + Slash + "settings.ini";
+        public static string IniPath { get;} = Environment.CurrentDirectory + "\\settings.ini";
         public static byte[] ScreensInUse { get; set; } = { 1 };
         public static int Mode { get; set; } = 1;
         public static string Directory { get; set; } = Environment.CurrentDirectory;

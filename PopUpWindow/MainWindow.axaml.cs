@@ -14,7 +14,7 @@ namespace PopUpWindow
 {
     public partial class MainWindow : Window
     {
-        private List<string> pictures = new List<string>();
+        private List<string> pictures = new ();
         private int screenNum = 1;
         private Settings settings = new();
 
