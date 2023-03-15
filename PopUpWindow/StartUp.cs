@@ -22,6 +22,11 @@ namespace PopUpWindow
 
         public StartUp()
         {
+            //Create history.hy
+            FileInfo historyFile = new FileInfo(Environment.CurrentDirectory + "\\history.hy");
+            if (!historyFile.Exists)
+                historyFile.Create();
+            
             //Import main(general) settings
             ImportMainSettings();
 
@@ -33,15 +38,26 @@ namespace PopUpWindow
             if (mode == 1)
             {
                 string path = MainSettings.Directory + "\\StartUp.ini";
-                FileInfo file = new(path);
 
-                if (file.Exists)
+                if (new FileInfo(path).Exists) // if StartUp exists
                 {
-                    IniManager manager = new(path);
+                    FileManager manager = new FileManager(path);
+                    string fileName = manager.GetPrivateString("file");
+
+                    if (fileName != "")
+                    {
+                        FileInfo file = new FileInfo(MainSettings.Directory + "\\" + fileName);
+                        if (file.Exists && new FileManager(Environment.CurrentDirectory + "\\history.hy").IsHistoryContains(file.Name, file.LastWriteTime))
+                            return;
+                    }
+                    else
+                    {
+                        //check other files (Is it possible to open and history not contains)
+                        //if(!contains)
+                        //
+                    }
 
                     string dateTimeStr = manager.GetPrivateString("time");
-                    string fileName = manager.GetPrivateString("file");
-                    string autoDel = manager.GetPrivateString("autodelete");
 
                     Regex timeFormat = new Regex(@"^([0-1][0-9]|[2][1-3]):[0-5][0-9]");
 
@@ -53,12 +69,8 @@ namespace PopUpWindow
                     else if (DateTime.TryParse(dateTimeStr, out DateTime tempdt))
                         _targetTime = tempdt;
 
-
-                    if (new FileInfo(MainSettings.Directory + "\\" + fileName).Exists &&
-                        !_targetTime.Equals(DateTime.MinValue))
-                        StartUpWaiter(MainSettings.Directory + "\\" + fileName);
-                    else if (!_targetTime.Equals(DateTime.MinValue))
-                        StartUpWaiter();
+                    if (!_targetTime.Equals(DateTime.MinValue))
+                        StartUpWaiter(); // need to post file path param
                 }
             }
             else if (mode == 2)
@@ -67,22 +79,23 @@ namespace PopUpWindow
             }
         }
 
-        async void StartUpWaiter(string filePath = "", bool autoDel = true)
+        async void StartUpWaiter()
         {
             new InfoWindow($"StartUpWaiter \nNext Start: {_targetTime}").Show();
             int seconds = 5;
             while (true)
             {
-                if (DateTime.Now > _targetTime &&
-                    filePath != "")
-                {
-                    OpenWindows(filePath, autoDel);
-                    break;
-                }
-
                 if (DateTime.Now > _targetTime)
                 {
-                    OpenWindows();
+                    FileManager manager = new FileManager(MainSettings.Directory + "\\StartUp.ini");
+                    string fileName = manager.GetPrivateString("file");
+                    bool autoDel = bool.TryParse(manager.GetPrivateString("autodelete"), out var temp)
+                        ? temp
+                        : true;
+                    if (fileName != "" && new FileInfo(MainSettings.Directory + "\\" + fileName).Exists)
+                        OpenWindows(fileName, autoDel);
+                    else
+                        OpenWindows();
                     break;
                 }
 
@@ -94,7 +107,7 @@ namespace PopUpWindow
         {
             try
             {
-                IniManager manager = new IniManager(MainSettings.IniPath);
+                FileManager manager = new FileManager(MainSettings.IniPath);
                 MainSettings.Mode = Int32.TryParse(manager.GetPrivateString("main", "mode"), out var mode)
                     ? mode
                     : MainSettings.Mode;
@@ -113,7 +126,7 @@ namespace PopUpWindow
             }
         }
 
-        private void OpenWindows( string filePath = "", bool autoDel = true)
+        private void OpenWindows(string filePath = "", bool autoDel = true)
         {
             int index = 1;
             foreach (var item in MainSettings.AllScreens)

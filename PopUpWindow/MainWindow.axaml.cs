@@ -50,7 +50,7 @@ namespace PopUpWindow
                     SecondModeCycle();
                     HelpGrid.IsVisible =
                         bool.TryParse(
-                            new IniManager(Environment.CurrentDirectory).GetPrivateString("main", "leftpanel"),
+                            new FileManager(Environment.CurrentDirectory).GetPrivateString("main", "leftpanel"),
                             out var leftPanel)
                             ? leftPanel
                             : false;
@@ -65,7 +65,7 @@ namespace PopUpWindow
         {
             try
             {
-                IniManager manager = new IniManager(MainSettings.IniPath);
+                FileManager manager = new FileManager(MainSettings.IniPath);
 
                 _settings.Rate = Byte.TryParse(manager.GetPrivateString($"display{_screenNum}", "rate"), out var temp)
                     ? temp
@@ -121,12 +121,11 @@ namespace PopUpWindow
                     window.Close();
                 MainSettings.Windows.Clear();
                 
-                if (_autoDel && _filePath != "")
-                {
-                    FileInfo file = new FileInfo(_filePath);
-                    if(file.Exists)
-                        file.Delete();
-                }
+                FileInfo file = new FileInfo(_filePath);
+                new FileManager(Environment.CurrentDirectory + "\\history.hy").WriteHistoryString(file.Name, file.LastWriteTime);
+                
+                if (_autoDel && _filePath != "" && file.Exists)
+                    file.Delete();
             }
         }
     }

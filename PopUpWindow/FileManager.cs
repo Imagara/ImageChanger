@@ -1,13 +1,17 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace PopUpWindow
 {
-    public class IniManager
+    public class FileManager
     {
+        //Поля класса
+        private readonly string _path; //Для хранения пути к INI-файлу
+
         //Конструктор, принимающий путь к INI-файлу
-        public IniManager(string aPath)
+        public FileManager(string aPath)
         {
             _path = aPath;
         }
@@ -114,13 +118,49 @@ namespace PopUpWindow
             return result;
         }
 
+        public bool IsHistoryContains(string aFileName, DateTime aLastWriteTime)
+        {
+            try
+            {
+                FileInfo historyFile = new(_path);
+                if (historyFile.Exists)
+                {
+                    StreamReader sr = new(_path);
+                    while (!sr.EndOfStream)
+                    {
+                        if (sr.ReadLine() == aFileName + "|" + aLastWriteTime)
+                        {
+                            sr.Close();
+                            return true;
+                        }
+                    }
+
+                    sr.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                new InfoWindow($"Error while reading file: " + ex.Message).Show();
+                return false;
+            }
+
+            return false;
+        }
+
         //Пишет значение в INI-файл (по указанным секции и ключу) 
         public void WritePrivateString(string aSection, string aKey, string aValue)
         {
-            
         }
 
-        //Поля класса
-        private readonly string _path; //Для хранения пути к INI-файлу
+        public void WriteHistoryString(string aFileName, DateTime aCreationTime)
+        {
+            FileInfo historyFile = new FileInfo(_path);
+            if (historyFile.Exists)
+            {
+                StreamWriter sw = new StreamWriter(_path,true);
+                sw.WriteLine(aFileName + "|" + aCreationTime);
+                sw.Close();
+            }
+        }
     }
 }
