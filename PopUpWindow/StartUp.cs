@@ -1,6 +1,7 @@
 ﻿using Avalonia.Controls;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using Avalonia.Interactivity;
 using System.Linq;
@@ -15,14 +16,14 @@ using Avalonia.Platform;
 
 namespace PopUpWindow
 {
-    class StartUp : Window
+    public class StartUp : Window
     {
-        private DateTime _targetTime;
+        private readonly DateTime _targetTime;
 
         public StartUp()
         {
             //Import main(general) settings
-            //ImportMainSettings();
+            ImportMainSettings();
 
             //Screen definition
             MainSettings.AllScreens = Screens.All;
@@ -38,42 +39,54 @@ namespace PopUpWindow
                 {
                     IniManager manager = new(path);
 
-                    string dateTimeStr = manager.GetPrivateString("main", "time");
-                    
-                    new InfoWindow(dateTimeStr).Show();
-                    
-                    Regex timeFormat = new Regex(@"^([0-1][0-9]|[2][1-3])[:./\s-][0-5][0-9]");
+                    string dateTimeStr = manager.GetPrivateString("time");
+                    string fileName = manager.GetPrivateString("file");
+                    string autoDel = manager.GetPrivateString("autodelete");
 
-                    //dateTimeStr = "00 00"; //temp
-                    
+                    Regex timeFormat = new Regex(@"^([0-1][0-9]|[2][1-3]):[0-5][0-9]");
+
                     if (timeFormat.IsMatch(dateTimeStr))
                         _targetTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
-                            Int32.Parse(dateTimeStr.Substring(0, dateTimeStr.IndexOf(' '))),
-                            Int32.Parse(dateTimeStr.Substring(3, 2)), 0);
+                            Int32.Parse(dateTimeStr.Substring(0, dateTimeStr.IndexOf(':'))),
+                            Int32.Parse(dateTimeStr.Substring(dateTimeStr.IndexOf(':') + 1,
+                                dateTimeStr.Length - dateTimeStr.IndexOf("=", StringComparison.Ordinal) - 1)), 0);
                     else if (DateTime.TryParse(dateTimeStr, out DateTime tempdt))
                         _targetTime = tempdt;
 
-                    if (!_targetTime.Equals(DateTime.MinValue))
+
+                    if (new FileInfo(MainSettings.Directory + "\\" + fileName).Exists &&
+                        !_targetTime.Equals(DateTime.MinValue))
+                        StartUpWaiter(MainSettings.Directory + "\\" + fileName);
+                    else if (!_targetTime.Equals(DateTime.MinValue))
                         StartUpWaiter();
                 }
             }
             else if (mode == 2)
             {
-                //OpenWindows();
+                OpenWindows();
             }
         }
 
-        void StartUpWaiter()
+        async void StartUpWaiter(string filePath = "", bool autoDel = true)
         {
+            new InfoWindow($"StartUpWaiter \nNext Start: {_targetTime}").Show();
             int seconds = 5;
             while (true)
             {
+                if (DateTime.Now > _targetTime &&
+                    filePath != "")
+                {
+                    OpenWindows(filePath, autoDel);
+                    break;
+                }
+
                 if (DateTime.Now > _targetTime)
                 {
                     OpenWindows();
                     break;
                 }
-                Thread.Sleep(seconds * 1000);
+
+                await Task.Delay(seconds * 1000);
             }
         }
 
@@ -100,25 +113,26 @@ namespace PopUpWindow
             }
         }
 
-        private void OpenWindows()
+        private void OpenWindows( string filePath = "", bool autoDel = true)
         {
             int index = 1;
             foreach (var item in MainSettings.AllScreens)
             {
                 var xPos = item.Bounds.Position.X;
                 if (MainSettings.ScreensInUse.Any(x => x == index))
-                    ShowWindow(xPos, index);
+                {
+                    MainWindow mw;
+                    if (filePath != "")
+                        mw = new MainWindow(index, filePath, autoDel);
+                    else
+                        mw = new MainWindow(index);
+                    mw.Position = new Avalonia.PixelPoint(xPos, 0);
+                    MainSettings.Windows.Add(mw);
+                    mw.Show();
+                }
+
                 index++;
             }
-        }
-
-        private void ShowWindow(int xPos, int screenNum)
-        {
-            new MainWindow(screenNum)
-            {
-                Position = new Avalonia.PixelPoint(xPos, 0),
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
-            }.Show();
         }
     }
 }

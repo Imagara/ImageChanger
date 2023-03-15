@@ -6,6 +6,21 @@
         x:Class="PopUpWindow.MainWindow"
         WindowState="FullScreen"
         Title="PopUpWindow">
+    <Window.Styles>
+        <Style Selector="Image.st">
+            <Style.Animations>
+                <Animation Duration="0:0:1"
+                           IterationCount="1"> 
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0.1"/>
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="1.0"/>
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+    </Window.Styles>
     <DockPanel>
         <Grid  Name="HelpGrid"
                DockPanel.Dock="Left"
@@ -25,7 +40,8 @@
         </Grid>
         <Image Name="MainImage"
                DockPanel.Dock="Right"
+               Classes="st"
                Stretch="Fill">
-        </Image>
+            </Image>
     </DockPanel>
 </Window>

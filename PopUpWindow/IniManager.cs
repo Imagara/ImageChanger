@@ -9,7 +9,7 @@ namespace PopUpWindow
         //Конструктор, принимающий путь к INI-файлу
         public IniManager(string aPath)
         {
-            path = aPath;
+            _path = aPath;
         }
 
         public string GetPrivateString(string aKey)
@@ -17,15 +17,15 @@ namespace PopUpWindow
             string result = "";
 
             Regex regex = new Regex(
-                @"^([A-Za-z]+=[0-9]+)|([A-Za-z]+=[A-Za-z]+)|([A-Za-z]+=([0-1][0-9]|[2][1-3])[:./\s-][0-5][0-9])|([[0-9A-Za-z]+])",
+                @"^([A-Za-z]+=[0-9]+)|([A-Za-z]+=[A-Za-z]+)|([A-Za-z]+=([0-1][0-9]|[2][1-3])[:./\s-][0-5][0-9])",
                 RegexOptions.Compiled);
 
             try
             {
-                FileInfo ini = new(path);
+                FileInfo ini = new(_path);
                 if (ini.Exists)
                 {
-                    StreamReader sr = new(path);
+                    StreamReader sr = new(_path);
                     while (!sr.EndOfStream)
                     {
                         string str = sr.ReadLine()!.ToLower().Replace(" ", "");
@@ -35,11 +35,14 @@ namespace PopUpWindow
                             str.IndexOf("[", StringComparison.Ordinal) != -1)
                             continue;
 
-                        string key = str.Substring(0, str.IndexOf("=", StringComparison.Ordinal));
+                        if (str.IndexOf("=", StringComparison.Ordinal) != -1)
+                        {
+                            string key = str.Substring(0, str.IndexOf("=", StringComparison.Ordinal));
 
-                        if (key == aKey)
-                            result = str.Substring(str.IndexOf("=", StringComparison.Ordinal) + 1,
-                                str.Length - str.IndexOf("=", StringComparison.Ordinal) - 1);
+                            if (key == aKey)
+                                result = str.Substring(str.IndexOf("=", StringComparison.Ordinal) + 1,
+                                    str.Length - str.IndexOf("=", StringComparison.Ordinal) - 1);
+                        }
                     }
 
                     sr.Close();
@@ -47,7 +50,7 @@ namespace PopUpWindow
             }
             catch (Exception ex)
             {
-                //new InfoWindow($"Error while reading ini file (key = {aKey}): " + ex.Message).Show();
+                new InfoWindow($"Error while reading ini file (key = {aKey}): " + ex.Message).Show();
                 return "";
             }
 
@@ -63,16 +66,16 @@ namespace PopUpWindow
                 RegexOptions.Compiled);
             try
             {
-                FileInfo ini = new(path);
+                FileInfo ini = new(_path);
                 if (ini.Exists)
                 {
-                    StreamReader sr = new(path);
+                    StreamReader sr = new(_path);
 
                     bool isDesiredSection = false;
 
                     while (!sr.EndOfStream)
                     {
-                        string str = sr.ReadLine()!.ToLower().Replace(" ", "");
+                        string str = sr.ReadLine()!.ToLower().Replace("  ", " ").Trim();
 
                         if (str.StartsWith("#") ||
                             !regex.IsMatch(str))
@@ -83,13 +86,13 @@ namespace PopUpWindow
                             isDesiredSection = true;
                             continue;
                         }
-                        
+
                         if (str.IndexOf("[", StringComparison.Ordinal) != -1 && isDesiredSection)
                             break;
                         if (str.IndexOf("[", StringComparison.Ordinal) != -1)
                             isDesiredSection = false;
-                        
-                        if (isDesiredSection)
+
+                        if (isDesiredSection && str.IndexOf("=", StringComparison.Ordinal) != -1)
                         {
                             string key = str.Substring(0, str.IndexOf("=", StringComparison.Ordinal));
                             if (key == aKey)
@@ -97,6 +100,7 @@ namespace PopUpWindow
                                     str.Length - str.IndexOf("=", StringComparison.Ordinal) - 1);
                         }
                     }
+
                     sr.Close();
                 }
             }
@@ -113,10 +117,10 @@ namespace PopUpWindow
         //Пишет значение в INI-файл (по указанным секции и ключу) 
         public void WritePrivateString(string aSection, string aKey, string aValue)
         {
-            //Записать значение в INI-файл
+            
         }
 
         //Поля класса
-        private string path; //Для хранения пути к INI-файлу
+        private readonly string _path; //Для хранения пути к INI-файлу
     }
 }

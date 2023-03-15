@@ -14,12 +14,7 @@ namespace PopUpWindow
 
         public override void OnFrameworkInitializationCompleted()
         {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
-                new StartUp();
-            }
-            base.OnFrameworkInitializationCompleted();
+            new StartUp();
         }
     }
 }
