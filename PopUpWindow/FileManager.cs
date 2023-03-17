@@ -128,7 +128,8 @@ namespace PopUpWindow
                     StreamReader sr = new(_path);
                     while (!sr.EndOfStream)
                     {
-                        if (sr.ReadLine() == aFileName + "|" + aLastWriteTime)
+                        string str = sr.ReadLine();
+                        if (str == aFileName + "|" + aLastWriteTime)
                         {
                             sr.Close();
                             return true;
@@ -157,7 +158,7 @@ namespace PopUpWindow
             FileInfo historyFile = new FileInfo(_path);
             if (historyFile.Exists)
             {
-                StreamWriter sw = new StreamWriter(_path,true);
+                StreamWriter sw = new StreamWriter(_path, true);
                 sw.WriteLine(aFileName + "|" + aCreationTime);
                 sw.Close();
             }

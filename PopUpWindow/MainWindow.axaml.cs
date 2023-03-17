@@ -14,7 +14,7 @@ namespace PopUpWindow
 {
     public partial class MainWindow : Window
     {
-        private readonly List<string> imagesPaths = new();
+        private readonly List<string> _imagesPaths = new();
         private readonly int _screenNum = 1;
         private readonly Settings _settings = new();
 
@@ -28,12 +28,12 @@ namespace PopUpWindow
             ImportSettings();
 
             _screenNum = screenNum;
-            this.imagesPaths = imagesPaths;
+            this._imagesPaths = imagesPaths;
             _autoDel = autoDel;
             Title = $"Screen #{screenNum}";
 
             if (MainSettings.Mode == 1)
-                MainImage.Source = new Bitmap(imagesPaths.First());
+                MainImage.Source = new Bitmap(MainSettings.Directory + "\\" + imagesPaths.First());
             else
                 Close();
         }
@@ -90,9 +90,9 @@ namespace PopUpWindow
             GetAllPictures();
             while (true)
             {
-                if (imagesPaths.Count == 0)
+                if (_imagesPaths.Count == 0)
                     break;
-                foreach (var item in imagesPaths)
+                foreach (var item in _imagesPaths)
                 {
                     MainImage.Source = new Bitmap(item);
                     await Task.Delay(_settings.Rate * 1000);
@@ -102,13 +102,13 @@ namespace PopUpWindow
 
         private void GetAllPictures()
         {
-            imagesPaths.Clear();
+            _imagesPaths.Clear();
 
             foreach (string file in Directory
                          .EnumerateFiles(_settings.DirectoryPath, "*.*", SearchOption.TopDirectoryOnly)
                          .Where(item => _settings.Extensions.Any(ext => '.' + ext == Path.GetExtension(item))))
             {
-                imagesPaths.Add(file);
+                _imagesPaths.Add(file);
             }
         }
 
@@ -116,19 +116,21 @@ namespace PopUpWindow
         {
             if (e.Key == Key.Escape && MainSettings.Mode == 1)
             {
-                FileInfo file = new FileInfo(imagesPaths.First());
+                FileInfo file = new FileInfo(MainSettings.Directory + "\\" + _imagesPaths.First());
                 string historyPath = Environment.CurrentDirectory + "\\history.hy";
-                new FileManager(historyPath).WriteHistoryString(file.Name,
-                    file.LastWriteTime);
+
+                new FileManager(historyPath).WriteHistoryString(file.Name, file.LastWriteTime);
                 if (_autoDel && file.Exists)
                     file.Delete();
-                imagesPaths.Remove(imagesPaths.First());
-                if (imagesPaths.Count <= 0)
+                _imagesPaths.Remove(_imagesPaths.First());
+                if (_imagesPaths.Count <= 0)
                 {
                     foreach (Window window in MainSettings.Windows)
                         window.Close();
                     MainSettings.Windows.Clear();
                 }
+                else
+                    MainImage.Source = new Bitmap(MainSettings.Directory +"\\" + _imagesPaths.First());
             }
         }
     }

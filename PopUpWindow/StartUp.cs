@@ -26,13 +26,13 @@ namespace PopUpWindow
         {
             //Import main(general) settings
             ImportMainSettings();
-            
+
             //Create history.hy if not exists
             string historyPath = Environment.CurrentDirectory + "\\history.hy";
             FileInfo historyFile = new FileInfo(historyPath);
             if (!historyFile.Exists)
                 historyFile.Create();
-            
+
             //Screens definition
             MainSettings.AllScreens = Screens.All;
 
@@ -78,12 +78,13 @@ namespace PopUpWindow
                     {
                         List<string> imagesPaths = new();
                         string[] extensions = { "png", "jpeg", "jpg", "bmp", "tiff", "jfif", "webp" };
-                        
+
                         var dir = new DirectoryInfo(MainSettings.Directory);
 
                         FileInfo[] files = dir.GetFiles();
 
-                        foreach (FileInfo file in files.Where(item => extensions.Any(ext => ext == item.Extension))
+                        foreach (FileInfo file in files
+                                     .Where(item => extensions.Any(ext => '.' + ext == item.Extension))
                                      .OrderBy(ord => ord.LastWriteTime))
                         {
                             string historyPath = Environment.CurrentDirectory + "\\history.hy";
@@ -159,7 +160,7 @@ namespace PopUpWindow
                         mw = new MainWindow(index, filePaths, autoDel);
                     else
                         mw = new MainWindow(index);
-                    mw.Position = new Avalonia.PixelPoint(xPos, 0);
+                    mw.Position = new PixelPoint(xPos, 0);
                     MainSettings.Windows.Add(mw);
                     mw.Show();
                 }
