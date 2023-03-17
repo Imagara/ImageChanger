@@ -22,17 +22,14 @@ namespace PopUpWindow
     {
         private readonly DateTime _targetTime;
 
-        private readonly string _directory = MainSettings.Directory;
-        private readonly string _launchPath = MainSettings.Directory + "\\launch.ini";
-        private readonly string _historyPath = Environment.CurrentDirectory + "\\history.hy";
-
         public StartUp()
         {
             //Import main(general) settings
             ImportMainSettings();
             
             //Create history.hy if not exists
-            FileInfo historyFile = new FileInfo(_historyPath);
+            string historyPath = Environment.CurrentDirectory + "\\history.hy";
+            FileInfo historyFile = new FileInfo(historyPath);
             if (!historyFile.Exists)
                 historyFile.Create();
             
@@ -42,9 +39,10 @@ namespace PopUpWindow
             int mode = MainSettings.Mode;
             if (mode == 1)
             {
-                if (new FileInfo(_launchPath).Exists)
+                string launchPath = MainSettings.Directory + "\\launch.ini";
+                if (new FileInfo(launchPath).Exists)
                 {
-                    FileManager manager = new FileManager(_launchPath);
+                    FileManager manager = new FileManager(launchPath);
 
                     string dateTimeStr = manager.GetPrivateString("time");
 
@@ -80,26 +78,24 @@ namespace PopUpWindow
                     {
                         List<string> imagesPaths = new();
                         string[] extensions = { "png", "jpeg", "jpg", "bmp", "tiff", "jfif", "webp" };
-
-                        var dir = new DirectoryInfo(_directory);
+                        
+                        var dir = new DirectoryInfo(MainSettings.Directory);
 
                         FileInfo[] files = dir.GetFiles();
 
                         foreach (FileInfo file in files.Where(item => extensions.Any(ext => ext == item.Extension))
                                      .OrderBy(ord => ord.LastWriteTime))
                         {
-                            new InfoWindow(file.Name).Show();
-                            FileManager manager = new(_historyPath);
+                            string historyPath = Environment.CurrentDirectory + "\\history.hy";
+                            FileManager manager = new(historyPath);
                             if (!manager.IsHistoryContains(file.Name, file.LastWriteTime))
-                            {
                                 imagesPaths.Add(file.Name);
-                                new InfoWindow(file.Name + " added").Show();
-                            }
                         }
 
                         if (imagesPaths.Count > 0)
                         {
-                            FileManager manager = new FileManager(_launchPath);
+                            string launchPath = MainSettings.Directory + "\\launch.ini";
+                            FileManager manager = new FileManager(launchPath);
 
                             bool autoDel = bool.TryParse(manager.GetPrivateString("autodelete"), out var temp)
                                 ? temp
