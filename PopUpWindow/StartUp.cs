@@ -10,8 +10,10 @@ using Avalonia.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Drawing.Text;
+using System.Runtime.InteropServices.JavaScript;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Avalonia;
 using Avalonia.Platform;
 
 namespace PopUpWindow
@@ -20,42 +22,29 @@ namespace PopUpWindow
     {
         private readonly DateTime _targetTime;
 
+        private readonly string _directory = MainSettings.Directory;
+        private readonly string _launchPath = MainSettings.Directory + "\\launch.ini";
+        private readonly string _historyPath = Environment.CurrentDirectory + "\\history.hy";
+
         public StartUp()
         {
-            //Create history.hy
-            FileInfo historyFile = new FileInfo(Environment.CurrentDirectory + "\\history.hy");
+            //Import main(general) settings
+            ImportMainSettings();
+            
+            //Create history.hy if not exists
+            FileInfo historyFile = new FileInfo(_historyPath);
             if (!historyFile.Exists)
                 historyFile.Create();
             
-            //Import main(general) settings
-            ImportMainSettings();
-
-            //Screen definition
+            //Screens definition
             MainSettings.AllScreens = Screens.All;
 
             int mode = MainSettings.Mode;
-
             if (mode == 1)
             {
-                string path = MainSettings.Directory + "\\StartUp.ini";
-
-                if (new FileInfo(path).Exists) // if StartUp exists
+                if (new FileInfo(_launchPath).Exists)
                 {
-                    FileManager manager = new FileManager(path);
-                    string fileName = manager.GetPrivateString("file");
-
-                    if (fileName != "")
-                    {
-                        FileInfo file = new FileInfo(MainSettings.Directory + "\\" + fileName);
-                        if (file.Exists && new FileManager(Environment.CurrentDirectory + "\\history.hy").IsHistoryContains(file.Name, file.LastWriteTime))
-                            return;
-                    }
-                    else
-                    {
-                        //check other files (Is it possible to open and history not contains)
-                        //if(!contains)
-                        //
-                    }
+                    FileManager manager = new FileManager(_launchPath);
 
                     string dateTimeStr = manager.GetPrivateString("time");
 
@@ -70,7 +59,7 @@ namespace PopUpWindow
                         _targetTime = tempdt;
 
                     if (!_targetTime.Equals(DateTime.MinValue))
-                        StartUpWaiter(); // need to post file path param
+                        StartUpWaiter();
                 }
             }
             else if (mode == 2)
@@ -87,16 +76,43 @@ namespace PopUpWindow
             {
                 if (DateTime.Now > _targetTime)
                 {
-                    FileManager manager = new FileManager(MainSettings.Directory + "\\StartUp.ini");
-                    string fileName = manager.GetPrivateString("file");
-                    bool autoDel = bool.TryParse(manager.GetPrivateString("autodelete"), out var temp)
-                        ? temp
-                        : true;
-                    if (fileName != "" && new FileInfo(MainSettings.Directory + "\\" + fileName).Exists)
-                        OpenWindows(fileName, autoDel);
-                    else
-                        OpenWindows();
-                    break;
+                    try
+                    {
+                        List<string> imagesPaths = new();
+                        string[] extensions = { "png", "jpeg", "jpg", "bmp", "tiff", "jfif", "webp" };
+
+                        var dir = new DirectoryInfo(_directory);
+
+                        FileInfo[] files = dir.GetFiles();
+
+                        foreach (FileInfo file in files.Where(item => extensions.Any(ext => ext == item.Extension))
+                                     .OrderBy(ord => ord.LastWriteTime))
+                        {
+                            new InfoWindow(file.Name).Show();
+                            FileManager manager = new(_historyPath);
+                            if (!manager.IsHistoryContains(file.Name, file.LastWriteTime))
+                            {
+                                imagesPaths.Add(file.Name);
+                                new InfoWindow(file.Name + " added").Show();
+                            }
+                        }
+
+                        if (imagesPaths.Count > 0)
+                        {
+                            FileManager manager = new FileManager(_launchPath);
+
+                            bool autoDel = bool.TryParse(manager.GetPrivateString("autodelete"), out var temp)
+                                ? temp
+                                : true;
+                            OpenWindows(imagesPaths, autoDel);
+                            break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        new InfoWindow(ex.Message).Show();
+                        throw;
+                    }
                 }
 
                 await Task.Delay(seconds * 1000);
@@ -108,17 +124,25 @@ namespace PopUpWindow
             try
             {
                 FileManager manager = new FileManager(MainSettings.IniPath);
+
                 MainSettings.Mode = Int32.TryParse(manager.GetPrivateString("main", "mode"), out var mode)
                     ? mode
                     : MainSettings.Mode;
+
                 MainSettings.ScreensInUse = manager.GetPrivateString($"main", "screens") != string.Empty
                     ? manager.GetPrivateString($"main", "screens").Split('/')
                         .Where(i => !string.IsNullOrWhiteSpace(i)).Select(byte.Parse).ToArray()
                     : new byte[] { 1 };
+
                 MainSettings.IniReaderRefreshRate =
                     Byte.TryParse(manager.GetPrivateString("main", "inirefreshrate"), out var temp)
                         ? temp
                         : MainSettings.IniReaderRefreshRate;
+
+                MainSettings.Directory =
+                    manager.GetPrivateString($"main", "directory").Trim() != string.Empty
+                        ? manager.GetPrivateString($"main", "directory")
+                        : MainSettings.Directory;
             }
             catch (Exception ex)
             {
@@ -126,7 +150,7 @@ namespace PopUpWindow
             }
         }
 
-        private void OpenWindows(string filePath = "", bool autoDel = true)
+        private void OpenWindows(List<string> filePaths = null, bool autoDel = true)
         {
             int index = 1;
             foreach (var item in MainSettings.AllScreens)
@@ -135,8 +159,8 @@ namespace PopUpWindow
                 if (MainSettings.ScreensInUse.Any(x => x == index))
                 {
                     MainWindow mw;
-                    if (filePath != "")
-                        mw = new MainWindow(index, filePath, autoDel);
+                    if (filePaths.Count > 0)
+                        mw = new MainWindow(index, filePaths, autoDel);
                     else
                         mw = new MainWindow(index);
                     mw.Position = new Avalonia.PixelPoint(xPos, 0);

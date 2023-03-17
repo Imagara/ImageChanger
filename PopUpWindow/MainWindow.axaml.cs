@@ -14,51 +14,50 @@ namespace PopUpWindow
 {
     public partial class MainWindow : Window
     {
-        private readonly List<string> _pictures = new();
+        private readonly List<string> imagesPaths = new();
         private readonly int _screenNum = 1;
         private readonly Settings _settings = new();
         
-        private readonly string _filePath;
+        private readonly string _historyPath = Environment.CurrentDirectory + "\\history.hy";
+
         private readonly bool _autoDel;
 
         public MainWindow() => InitializeComponent();
 
-        public MainWindow(int screenNum, string filePath = "", bool autoDel = true)
+        public MainWindow(int screenNum, List<string> imagesPaths, bool autoDel = true)
+        {
+            InitializeComponent();
+            ImportSettings();
+
+            _screenNum = screenNum;
+            this.imagesPaths = imagesPaths;
+            _autoDel = autoDel;
+            Title = $"Screen #{screenNum}";
+
+            if (MainSettings.Mode == 1)
+                MainImage.Source = new Bitmap(imagesPaths.First());
+            else
+                Close();
+        }
+
+        public MainWindow(int screenNum)
         {
             InitializeComponent();
             _screenNum = screenNum;
-            _filePath = filePath;
-            _autoDel = autoDel;
             Title = $"Screen #{screenNum}";
             ImportSettings();
-
-            switch (MainSettings.Mode)
+            if (MainSettings.Mode == 2)
             {
-                case 1:
-                    if (filePath == "")
-                    {
-                        GetAllPictures();
-                        MainImage.Source = _pictures.Count > 0
-                            ? new Bitmap(_pictures.LastOrDefault())
-                            : null;
-                    }
-                    else
-                        MainImage.Source = new Bitmap(filePath);
-
-                    break;
-                case 2:
-                    SecondModeCycle();
-                    HelpGrid.IsVisible =
-                        bool.TryParse(
-                            new FileManager(Environment.CurrentDirectory).GetPrivateString("main", "leftpanel"),
-                            out var leftPanel)
-                            ? leftPanel
-                            : false;
-                    break;
-                default:
-                    new InfoWindow($"Invalid operating mode selected").Show();
-                    break;
+                SecondModeCycle();
+                HelpGrid.IsVisible =
+                    bool.TryParse(
+                        new FileManager(Environment.CurrentDirectory).GetPrivateString("main", "leftpanel"),
+                        out var leftPanel)
+                        ? leftPanel
+                        : false;
             }
+            else
+                Close();
         }
 
         private void ImportSettings()
@@ -93,9 +92,9 @@ namespace PopUpWindow
             GetAllPictures();
             while (true)
             {
-                if (_pictures.Count == 0)
+                if (imagesPaths.Count == 0)
                     break;
-                foreach (var item in _pictures)
+                foreach (var item in imagesPaths)
                 {
                     MainImage.Source = new Bitmap(item);
                     await Task.Delay(_settings.Rate * 1000);
@@ -105,27 +104,32 @@ namespace PopUpWindow
 
         private void GetAllPictures()
         {
-            _pictures.Clear();
+            imagesPaths.Clear();
 
             foreach (string file in Directory
-                         .EnumerateFiles(_settings.DirectoryPath, "*.*", SearchOption.AllDirectories)
+                         .EnumerateFiles(_settings.DirectoryPath, "*.*", SearchOption.TopDirectoryOnly)
                          .Where(item => _settings.Extensions.Any(ext => '.' + ext == Path.GetExtension(item))))
-                _pictures.Add(file);
+            {
+                imagesPaths.Add(file);
+            }
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
             if (e.Key == Key.Escape && MainSettings.Mode == 1)
             {
-                foreach (Window window in MainSettings.Windows)
-                    window.Close();
-                MainSettings.Windows.Clear();
-                
-                FileInfo file = new FileInfo(_filePath);
-                new FileManager(Environment.CurrentDirectory + "\\history.hy").WriteHistoryString(file.Name, file.LastWriteTime);
-                
-                if (_autoDel && _filePath != "" && file.Exists)
+                FileInfo file = new FileInfo(imagesPaths.First());
+                new FileManager(_historyPath).WriteHistoryString(file.Name,
+                    file.LastWriteTime);
+                if (_autoDel && file.Exists)
                     file.Delete();
+                imagesPaths.Remove(imagesPaths.First());
+                if (imagesPaths.Count <= 0)
+                {
+                    foreach (Window window in MainSettings.Windows)
+                        window.Close();
+                    MainSettings.Windows.Clear();
+                }
             }
         }
     }

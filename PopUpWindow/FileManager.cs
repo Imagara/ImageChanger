@@ -32,7 +32,7 @@ namespace PopUpWindow
                     StreamReader sr = new(_path);
                     while (!sr.EndOfStream)
                     {
-                        string str = sr.ReadLine()!.ToLower().Replace(" ", "");
+                        string str = sr.ReadLine()!.Replace(" ", "");
 
                         if (str.StartsWith("#") ||
                             !regex.IsMatch(str) ||
@@ -79,7 +79,7 @@ namespace PopUpWindow
 
                     while (!sr.EndOfStream)
                     {
-                        string str = sr.ReadLine()!.ToLower().Replace("  ", " ").Trim();
+                        string str = sr.ReadLine()!.Replace("  ", " ").Trim();
 
                         if (str.StartsWith("#") ||
                             !regex.IsMatch(str))
