@@ -17,8 +17,6 @@ namespace PopUpWindow
         private readonly List<string> imagesPaths = new();
         private readonly int _screenNum = 1;
         private readonly Settings _settings = new();
-        
-        private readonly string _historyPath = Environment.CurrentDirectory + "\\history.hy";
 
         private readonly bool _autoDel;
 
@@ -119,7 +117,8 @@ namespace PopUpWindow
             if (e.Key == Key.Escape && MainSettings.Mode == 1)
             {
                 FileInfo file = new FileInfo(imagesPaths.First());
-                new FileManager(_historyPath).WriteHistoryString(file.Name,
+                string historyPath = Environment.CurrentDirectory + "\\history.hy";
+                new FileManager(historyPath).WriteHistoryString(file.Name,
                     file.LastWriteTime);
                 if (_autoDel && file.Exists)
                     file.Delete();
