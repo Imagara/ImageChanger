@@ -21,6 +21,7 @@ namespace PopUpWindow
     public class StartUp : Window
     {
         private readonly DateTime _targetTime;
+        private readonly Logger _logger = new();
 
         public StartUp()
         {
@@ -37,6 +38,7 @@ namespace PopUpWindow
             MainSettings.AllScreens = Screens.All;
 
             int mode = MainSettings.Mode;
+            _logger.CreateLog($"{mode} mode selected");
             if (mode == 1)
             {
                 string launchPath = MainSettings.Directory + "\\launch.ini";
@@ -66,10 +68,10 @@ namespace PopUpWindow
             }
         }
 
-        async void StartUpWaiter()
+        async void StartUpWaiter(int updateRate = 60)
         {
-            new InfoWindow($"StartUpWaiter \nNext Start: {_targetTime}").Show();
-            int seconds = 5;
+            _logger.CreateLog($"StartUpWaiter: Next Start: {_targetTime}");
+            int seconds = updateRate;
             while (true)
             {
                 if (DateTime.Now > _targetTime)
@@ -101,14 +103,14 @@ namespace PopUpWindow
                             bool autoDel = bool.TryParse(manager.GetPrivateString("autodelete"), out var temp)
                                 ? temp
                                 : true;
-                            OpenWindows(imagesPaths, autoDel);
-                            break;
+                            if (MainSettings.Windows.Count == 0)
+                                OpenWindows(imagesPaths, autoDel);
+                            _logger.CreateLog($"StartUpWaiter: Windows opened");
                         }
                     }
                     catch (Exception ex)
                     {
-                        new InfoWindow(ex.Message).Show();
-                        throw;
+                        _logger.CreateLog("An error occurred while running StartUpWaiter: " + ex.Message);
                     }
                 }
 
@@ -140,10 +142,12 @@ namespace PopUpWindow
                     manager.GetPrivateString($"main", "directory").Trim() != string.Empty
                         ? manager.GetPrivateString($"main", "directory")
                         : MainSettings.Directory;
+
+                _logger.CreateLog($"Main settings successfully imported");
             }
             catch (Exception ex)
             {
-                new InfoWindow("Import main settings error: " + ex.Message).Show();
+                _logger.CreateLog("Import main settings error: " + ex.Message);
             }
         }
 
@@ -156,7 +160,7 @@ namespace PopUpWindow
                 if (MainSettings.ScreensInUse.Any(x => x == index))
                 {
                     MainWindow mw;
-                    if (filePaths.Count > 0)
+                    if (filePaths != null && MainSettings.Mode == 1 && filePaths.Count > 0)
                         mw = new MainWindow(index, filePaths, autoDel);
                     else
                         mw = new MainWindow(index);

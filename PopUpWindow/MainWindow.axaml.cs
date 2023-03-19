@@ -16,8 +16,10 @@ namespace PopUpWindow
     {
         private readonly List<string> _imagesPaths = new();
         private readonly int _screenNum = 1;
+        
         private readonly Settings _settings = new();
-
+        private readonly Logger _logger = new();
+        
         private readonly bool _autoDel;
 
         public MainWindow() => InitializeComponent();
@@ -28,7 +30,7 @@ namespace PopUpWindow
             ImportSettings();
 
             _screenNum = screenNum;
-            this._imagesPaths = imagesPaths;
+            _imagesPaths = imagesPaths;
             _autoDel = autoDel;
             Title = $"Screen #{screenNum}";
 
@@ -74,10 +76,12 @@ namespace PopUpWindow
                 _settings.Extensions = manager.GetPrivateString($"display{_screenNum}", "ext") != string.Empty
                     ? manager.GetPrivateString($"display{_screenNum}", "ext").Split('/')
                     : _settings.Extensions;
+                
+                _logger.CreateLog($"{_screenNum} display: settings successfully imported");
             }
             catch (Exception ex)
             {
-                new InfoWindow(ex.Message).Show();
+                _logger.CreateLog($"{_screenNum} display: import settings error: " + ex.Message);
             }
         }
 

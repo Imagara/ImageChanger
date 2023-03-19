@@ -9,6 +9,7 @@ namespace PopUpWindow
     {
         //Поля класса
         private readonly string _path; //Для хранения пути к INI-файлу
+        private readonly Logger _logger = new();
 
         //Конструктор, принимающий путь к INI-файлу
         public FileManager(string aPath)
@@ -54,7 +55,7 @@ namespace PopUpWindow
             }
             catch (Exception ex)
             {
-                new InfoWindow($"Error while reading ini file (key = {aKey}): " + ex.Message).Show();
+                _logger.CreateLog($"Error while reading ini file (key = {aKey}): " + ex.Message);
                 return "";
             }
 
@@ -110,7 +111,7 @@ namespace PopUpWindow
             }
             catch (Exception ex)
             {
-                new InfoWindow($"Error while reading ini file (key = {aKey}): " + ex.Message).Show();
+                _logger.CreateLog($"Error while reading ini file (section = {aSection}, key = {aKey}): " + ex.Message);
                 return "";
             }
 
@@ -141,7 +142,7 @@ namespace PopUpWindow
             }
             catch (Exception ex)
             {
-                new InfoWindow($"Error while reading file: " + ex.Message).Show();
+                _logger.CreateLog($"Error while reading file({_path}): " + ex.Message);
                 return false;
             }
 
@@ -155,12 +156,19 @@ namespace PopUpWindow
 
         public void WriteHistoryString(string aFileName, DateTime aCreationTime)
         {
-            FileInfo historyFile = new FileInfo(_path);
-            if (historyFile.Exists)
+            try
             {
-                StreamWriter sw = new StreamWriter(_path, true);
-                sw.WriteLine(aFileName + "|" + aCreationTime);
-                sw.Close();
+                FileInfo historyFile = new FileInfo(_path);
+                if (historyFile.Exists)
+                {
+                    StreamWriter sw = new StreamWriter(_path, true);
+                    sw.WriteLine(aFileName + "|" + aCreationTime);
+                    sw.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.CreateLog($"Error while writing file({_path}): " + ex.Message);
             }
         }
     }
