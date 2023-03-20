@@ -45,8 +45,11 @@ namespace PopUpWindow
                             string key = str.Substring(0, str.IndexOf("=", StringComparison.Ordinal));
 
                             if (key == aKey)
+                            {
                                 result = str.Substring(str.IndexOf("=", StringComparison.Ordinal) + 1,
                                     str.Length - str.IndexOf("=", StringComparison.Ordinal) - 1);
+                                break;
+                            }
                         }
                     }
 
@@ -101,8 +104,11 @@ namespace PopUpWindow
                         {
                             string key = str.Substring(0, str.IndexOf("=", StringComparison.Ordinal));
                             if (key == aKey)
+                            {
                                 result = str.Substring(str.IndexOf("=", StringComparison.Ordinal) + 1,
                                     str.Length - str.IndexOf("=", StringComparison.Ordinal) - 1);
+                                break;
+                            }
                         }
                     }
 

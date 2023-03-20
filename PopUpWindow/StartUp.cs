@@ -11,7 +11,7 @@ namespace PopUpWindow
 {
     public class StartUp : Window
     {
-        private readonly DateTime _targetTime;
+        private DateTime _targetTime;
         private readonly Logger _logger = new();
 
         public StartUp()
@@ -31,43 +31,43 @@ namespace PopUpWindow
             int mode = MainSettings.Mode;
             _logger.CreateLog($"{mode} mode selected");
             if (mode == 1)
+                StartUpWaiter();
+            else if (mode == 2)
+                OpenWindows();
+        }
+
+        async void StartUpWaiter(int updateRate = 2)
+        {
+            string launchPath = MainSettings.Directory + "\\launch.ini";
+
+            int seconds = updateRate;
+            while (true)
             {
-                string launchPath = MainSettings.Directory + "\\launch.ini";
                 if (new FileInfo(launchPath).Exists)
                 {
                     FileManager manager = new FileManager(launchPath);
 
                     string dateTimeStr = manager.GetPrivateString("time");
-                    
+
                     Regex timeFormat = new Regex(@"^([0-1][0-9]|[2][1-3]):[0-5][0-9]");
 
+                    DateTime targetTime = new();
+                    
                     if (timeFormat.IsMatch(dateTimeStr))
-                        _targetTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
+                        targetTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
                             Int32.Parse(dateTimeStr.Substring(0, dateTimeStr.IndexOf(':'))),
                             Int32.Parse(dateTimeStr.Substring(dateTimeStr.IndexOf(':') + 1,
                                 dateTimeStr.Length - dateTimeStr.IndexOf("=", StringComparison.Ordinal) - 1)), 0);
                     else if (DateTime.TryParse(dateTimeStr, out DateTime tempdt))
-                        _targetTime = tempdt;
+                        targetTime = tempdt;
 
-                    if (!_targetTime.Equals(DateTime.MinValue))
-                        StartUpWaiter();
-                    else
-                        _logger.CreateLog($"StartUpWaiter: Error when starting (target time: {_targetTime})");
+                    if (targetTime.Equals(DateTime.MinValue))
+                        continue;
+                    if (_targetTime != targetTime)
+                        _logger.CreateLog($"StartUpWaiter: Next Start: {targetTime}");
+                    _targetTime = targetTime;
                 }
-            }
-            else if (mode == 2)
-            {
-                OpenWindows();
-            }
-        }
 
-        async void StartUpWaiter(int updateRate = 60)
-        {
-            _logger.CreateLog($"StartUpWaiter: Next Start: {_targetTime}");
-            int seconds = updateRate;
-            while (true)
-            {
-                
                 if (DateTime.Now > _targetTime)
                 {
                     try
@@ -91,7 +91,6 @@ namespace PopUpWindow
 
                         if (imagesPaths.Count > 0)
                         {
-                            string launchPath = MainSettings.Directory + "\\launch.ini";
                             FileManager manager = new FileManager(launchPath);
 
                             bool autoDel = bool.TryParse(manager.GetPrivateString("autodelete"), out var temp)
