@@ -1,0 +1,137 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        MinHeight="300"
+        MinWidth="600"
+        x:Class="PopUpWindow.IniCreatorWindow"
+        Title="IniCreatorWindow">
+    <ScrollViewer Background="White"
+                  VerticalScrollBarVisibility="Visible">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="250" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="250" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border BorderBrush="Black"
+                        BorderThickness="1"
+                        Margin="10"
+                        CornerRadius="15">
+                    <Image Margin="5" />
+                </Border>
+                <Border Grid.Column="1"
+                        BorderBrush="black"
+                        BorderThickness="1"
+                        Margin="10"
+                        CornerRadius="15">
+                    <StackPanel Margin="10">
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="Display:" />
+                            <Button Content="+"
+                                    Width="30"
+                                    Height="30"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center" />
+                            <Button Content="⌫"
+                                    Width="40"
+                                    Height="30"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center" />
+                        </StackPanel>
+                        <ListBox Background="transparent">
+                            123456789
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="black"
+                                            BorderThickness="1"
+                                            CornerRadius="15"
+                                            Height="30"
+                                            Width="30">
+                                        <Label Content="1"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                        </ListBox>
+                        <Label Content="Mode" />
+                        <ComboBox SelectedItem="1">
+                            <Label Content="1" />
+                            <Label Content="2" />
+                        </ComboBox>
+                        <Label Content="Directory" />
+                        <TextBox />
+                    </StackPanel>
+                </Border>
+            </Grid>
+            <Grid Grid.Row="1">
+                <StackPanel>
+                    <Label Content="Displays Settings"
+                           VerticalAlignment="Top"
+                           HorizontalAlignment="Center" />
+                    <ListBox Background="transparent">
+                        123456789
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border BorderBrush="black"
+                                            BorderThickness="1"
+                                            CornerRadius="15"
+                                            Height="150"
+                                            Margin="5,0,5,0">
+                                        <Image Margin="5" />
+                                    </Border>
+                                    <Border Grid.Column="1"
+                                            BorderBrush="black"
+                                            BorderThickness="1"
+                                            CornerRadius="15"
+                                            Height="200"
+                                            Margin="5,0,5,0">
+                                        <StackPanel Margin="10">
+                                            <Label Content="Directory" />
+                                            <TextBox/>
+                                            <Label Content="Rate"/>
+                                            <TextBox Width="70"
+                                                     HorizontalAlignment="Left"/>
+                                            <Label Content="Extensions"/>
+                                            <TextBox></TextBox>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+                <Grid VerticalAlignment="Bottom"
+                      Height="50">
+                    <Grid Background="gray"
+                          Opacity="0.85" />
+                    <Button HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Width="120" Height="40"
+                            Content="Создать"
+                            Background="Gray"
+                            VerticalContentAlignment="Center"
+                            HorizontalContentAlignment="Center">
+                    </Button>
+                </Grid>
+            </Grid>
+        </Grid>
+    </ScrollViewer>
+</Window>

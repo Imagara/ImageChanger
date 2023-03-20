@@ -1,20 +1,11 @@
 ﻿using Avalonia.Controls;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using Avalonia.Interactivity;
 using System.Linq;
-using Avalonia.Media.Imaging;
-using Avalonia.Threading;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Drawing.Text;
-using System.Runtime.InteropServices.JavaScript;
 using System.Text.RegularExpressions;
-using System.Threading;
 using Avalonia;
-using Avalonia.Platform;
 
 namespace PopUpWindow
 {
@@ -47,7 +38,7 @@ namespace PopUpWindow
                     FileManager manager = new FileManager(launchPath);
 
                     string dateTimeStr = manager.GetPrivateString("time");
-
+                    
                     Regex timeFormat = new Regex(@"^([0-1][0-9]|[2][1-3]):[0-5][0-9]");
 
                     if (timeFormat.IsMatch(dateTimeStr))
@@ -60,6 +51,8 @@ namespace PopUpWindow
 
                     if (!_targetTime.Equals(DateTime.MinValue))
                         StartUpWaiter();
+                    else
+                        _logger.CreateLog($"StartUpWaiter: Error when starting (target time: {_targetTime})");
                 }
             }
             else if (mode == 2)
@@ -74,6 +67,7 @@ namespace PopUpWindow
             int seconds = updateRate;
             while (true)
             {
+                
                 if (DateTime.Now > _targetTime)
                 {
                     try

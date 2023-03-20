@@ -10,9 +10,12 @@
     <StartupObject></StartupObject>
     <AssemblyName>PopUpWindow</AssemblyName>
     <RootNamespace>PopUpWindow</RootNamespace>
+    <LangVersion>11</LangVersion>
+    <Authors>Imagara</Authors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <PlatformTarget>x64</PlatformTarget>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
   <ItemGroup>
     <None Remove=".gitignore" />

@@ -18,6 +18,7 @@ namespace PopUpWindow
             {
                 desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 new StartUp();
+                //new IniCreatorWindow().Show();
             }
         }
     }
