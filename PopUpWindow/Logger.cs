@@ -6,9 +6,9 @@ namespace PopUpWindow;
 
 public class Logger
 {
-    private static readonly string DirPath = Environment.CurrentDirectory + "\\logs";
+    private static readonly string DirPath = Environment.CurrentDirectory + MainSettings.Slash + "logs";
     private static readonly string LogFileName = $"{DateTime.Now.ToShortDateString()}.log";
-    private readonly string _logFilePath = DirPath + "\\" + LogFileName;
+    private readonly string _logFilePath = DirPath + MainSettings.Slash + LogFileName;
     public Logger()
     {
         FileInfo logFile = new FileInfo(_logFilePath);

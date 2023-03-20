@@ -10,7 +10,8 @@ namespace PopUpWindow
         public static IReadOnlyList<Screen>? AllScreens { get; set; }
         public static byte[] ScreensInUse { get; set; } = { 1 };
         public static List<Window> Windows { get; } = new();
-        public static string IniPath { get; } = Environment.CurrentDirectory + "\\settings.ini";
+        public static char Slash { get; set; } = '\\';
+        public static string IniPath { get; } = Environment.CurrentDirectory + Slash + "settings.ini";
         public static int Mode { get; set; } = 1;
         public static string Directory { get; set; } = Environment.CurrentDirectory;
         public static int IniReaderRefreshRate { get; set; } = 1;

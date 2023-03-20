@@ -16,10 +16,10 @@ namespace PopUpWindow
     {
         private readonly List<string> _imagesPaths = new();
         private readonly int _screenNum = 1;
-        
+
         private readonly Settings _settings = new();
         private readonly Logger _logger = new();
-        
+
         private readonly bool _autoDel;
 
         public MainWindow() => InitializeComponent();
@@ -35,7 +35,7 @@ namespace PopUpWindow
             Title = $"Screen #{screenNum}";
 
             if (MainSettings.Mode == 1)
-                MainImage.Source = new Bitmap(MainSettings.Directory + "\\" + imagesPaths.First());
+                MainImage.Source = new Bitmap(MainSettings.Directory + MainSettings.Slash + imagesPaths.First());
             else
                 Close();
         }
@@ -76,7 +76,7 @@ namespace PopUpWindow
                 _settings.Extensions = manager.GetPrivateString($"display{_screenNum}", "ext") != string.Empty
                     ? manager.GetPrivateString($"display{_screenNum}", "ext").Split('/')
                     : _settings.Extensions;
-                
+
                 _logger.CreateLog($"{_screenNum} display: settings successfully imported");
             }
             catch (Exception ex)
@@ -120,8 +120,8 @@ namespace PopUpWindow
         {
             if (e.Key == Key.Escape && MainSettings.Mode == 1)
             {
-                FileInfo file = new FileInfo(MainSettings.Directory + "\\" + _imagesPaths.First());
-                string historyPath = Environment.CurrentDirectory + "\\history.hy";
+                FileInfo file = new FileInfo(MainSettings.Directory + MainSettings.Slash + _imagesPaths.First());
+                string historyPath = Environment.CurrentDirectory + MainSettings.Slash + "history.hy";
 
                 new FileManager(historyPath).WriteHistoryString(file.Name, file.LastWriteTime);
                 if (_autoDel && file.Exists)
@@ -134,7 +134,7 @@ namespace PopUpWindow
                     MainSettings.Windows.Clear();
                 }
                 else
-                    MainImage.Source = new Bitmap(MainSettings.Directory +"\\" + _imagesPaths.First());
+                    MainImage.Source = new Bitmap(MainSettings.Directory + MainSettings.Slash + _imagesPaths.First());
             }
         }
     }

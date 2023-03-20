@@ -16,11 +16,13 @@ namespace PopUpWindow
 
         public StartUp()
         {
+            SlashDefinition();
+            
             //Import main(general) settings
             ImportMainSettings();
-
+            
             //Create history.hy if not exists
-            string historyPath = Environment.CurrentDirectory + "\\history.hy";
+            string historyPath = Environment.CurrentDirectory + MainSettings.Slash + "history.hy";
             FileInfo historyFile = new FileInfo(historyPath);
             if (!historyFile.Exists)
                 historyFile.Create();
@@ -36,9 +38,17 @@ namespace PopUpWindow
                 OpenWindows();
         }
 
+        private void SlashDefinition()
+        {
+            if (Environment.OSVersion.ToString().Substring(0, 9) == "Microsoft")
+                MainSettings.Slash = '\\';
+            else if (Environment.OSVersion.ToString().Substring(0, 4) == "Unix")
+                MainSettings.Slash = '/';
+        }
+
         async void StartUpWaiter(int updateRate = 2)
         {
-            string launchPath = MainSettings.Directory + "\\launch.ini";
+            string launchPath = MainSettings.Directory + MainSettings.Slash + "launch.ini";
 
             int seconds = updateRate;
             while (true)
@@ -52,7 +62,7 @@ namespace PopUpWindow
                     Regex timeFormat = new Regex(@"^([0-1][0-9]|[2][1-3]):[0-5][0-9]");
 
                     DateTime targetTime = new();
-                    
+
                     if (timeFormat.IsMatch(dateTimeStr))
                         targetTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
                             Int32.Parse(dateTimeStr.Substring(0, dateTimeStr.IndexOf(':'))),
@@ -83,7 +93,7 @@ namespace PopUpWindow
                                      .Where(item => extensions.Any(ext => '.' + ext == item.Extension))
                                      .OrderBy(ord => ord.LastWriteTime))
                         {
-                            string historyPath = Environment.CurrentDirectory + "\\history.hy";
+                            string historyPath = Environment.CurrentDirectory + MainSettings.Slash + "history.hy";
                             FileManager manager = new(historyPath);
                             if (!manager.IsHistoryContains(file.Name, file.LastWriteTime))
                                 imagesPaths.Add(file.Name);
