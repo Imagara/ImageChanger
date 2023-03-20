@@ -67,7 +67,7 @@ namespace PopUpWindow
                         targetTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
                             Int32.Parse(dateTimeStr.Substring(0, dateTimeStr.IndexOf(':'))),
                             Int32.Parse(dateTimeStr.Substring(dateTimeStr.IndexOf(':') + 1,
-                                dateTimeStr.Length - dateTimeStr.IndexOf("=", StringComparison.Ordinal) - 1)), 0);
+                                dateTimeStr.Length - dateTimeStr.IndexOf(":", StringComparison.Ordinal) - 1)), 0);
                     else if (DateTime.TryParse(dateTimeStr, out DateTime tempdt))
                         targetTime = tempdt;
 
