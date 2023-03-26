@@ -17,15 +17,28 @@ namespace PopUpWindow
         public StartUp()
         {
             SlashDefinition();
-            
+
             //Import main(general) settings
             ImportMainSettings();
-            
+
             //Create history.hy if not exists
-            string historyPath = Environment.CurrentDirectory + MainSettings.Slash + "history.hy";
-            FileInfo historyFile = new FileInfo(historyPath);
-            if (!historyFile.Exists)
-                historyFile.Create();
+            try
+            {
+                string historyPath = Environment.CurrentDirectory + MainSettings.Slash + "history.hy";
+                FileInfo historyFile = new FileInfo(historyPath);
+                if (!historyFile.Exists)
+                {
+                    historyFile.Create();
+                    _logger.CreateLog($"history.hy created");
+                }
+                else
+                    _logger.CreateLog($"history.hy found");
+            }
+            catch (Exception ex)
+            {
+                _logger.CreateLog($"Error while creating history.hy");
+            }
+
 
             //Screens definition
             MainSettings.AllScreens = Screens.All;
@@ -33,7 +46,9 @@ namespace PopUpWindow
             int mode = MainSettings.Mode;
             _logger.CreateLog($"{mode} mode selected");
             if (mode == 1)
+            {
                 StartUpWaiter();
+            }
             else if (mode == 2)
                 OpenWindows();
         }
@@ -130,23 +145,27 @@ namespace PopUpWindow
                 MainSettings.Mode = Int32.TryParse(manager.GetPrivateString("main", "mode"), out var mode)
                     ? mode
                     : MainSettings.Mode;
-
-                MainSettings.ScreensInUse = manager.GetPrivateString($"main", "screens") != string.Empty
-                    ? manager.GetPrivateString($"main", "screens").Split('/')
-                        .Where(i => !string.IsNullOrWhiteSpace(i)).Select(byte.Parse).ToArray()
-                    : new byte[] { 1 };
-
+                
                 MainSettings.IniReaderRefreshRate =
                     Byte.TryParse(manager.GetPrivateString("main", "inirefreshrate"), out var temp)
                         ? temp
                         : MainSettings.IniReaderRefreshRate;
 
-                MainSettings.Directory =
-                    manager.GetPrivateString($"main", "directory").Trim() != string.Empty
-                        ? manager.GetPrivateString($"main", "directory")
-                        : MainSettings.Directory;
-
-                _logger.CreateLog($"Main settings successfully imported");
+                if (mode == 1)
+                {
+                    MainSettings.Directory =
+                        manager.GetPrivateString($"main", "directory").Trim() != string.Empty
+                            ? manager.GetPrivateString($"main", "directory")
+                            : MainSettings.Directory;
+                }
+                else if (mode == 2)
+                {
+                    MainSettings.ScreensInUse = manager.GetPrivateString($"main", "screens") != string.Empty
+                        ? manager.GetPrivateString($"main", "screens").Split('/')
+                            .Where(i => !string.IsNullOrWhiteSpace(i)).Select(byte.Parse).ToArray()
+                        : new byte[] { 1 };
+                }
+                _logger.CreateLog($"Main settings for mode {mode} successfully imported");
             }
             catch (Exception ex)
             {
@@ -157,22 +176,30 @@ namespace PopUpWindow
         private void OpenWindows(List<string> filePaths = null, bool autoDel = true)
         {
             int index = 1;
-            foreach (var item in MainSettings.AllScreens)
+            try
             {
-                var xPos = item.Bounds.Position.X;
-                if (MainSettings.ScreensInUse.Any(x => x == index))
+                foreach (var item in MainSettings.AllScreens)
                 {
-                    MainWindow mw;
-                    if (filePaths != null && MainSettings.Mode == 1 && filePaths.Count > 0)
-                        mw = new MainWindow(index, filePaths, autoDel);
-                    else
-                        mw = new MainWindow(index);
-                    mw.Position = new PixelPoint(xPos, 0);
-                    MainSettings.Windows.Add(mw);
-                    mw.Show();
-                }
+                    var xPos = item.Bounds.Position.X;
+                    if (MainSettings.ScreensInUse.Any(x => x == index))
+                    {
+                        MainWindow mw;
+                        if (filePaths != null && MainSettings.Mode == 1 && filePaths.Count > 0)
+                            mw = new MainWindow(index, filePaths, autoDel);
+                        else
+                            mw = new MainWindow(index);
+                        mw.Position = new PixelPoint(xPos, 0);
+                        MainSettings.Windows.Add(mw);
+                        mw.Show();
+                    }
 
-                index++;
+                    index++;
+                }
+                _logger.CreateLog("window opened successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.CreateLog("Window opening error: " + ex.Message);
             }
         }
     }
