@@ -146,7 +146,7 @@
                 </Grid.RowDefinitions>
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="Выбрать ini файл" />
+                        <Button Content="Выбрать ini файл" Click="OpenIniFileButton_OnClick"/>
                         <Label Content="Выбрано: " />
                         <Label Name="SelectedIniLabel" Content="" />
                     </StackPanel>
@@ -185,7 +185,8 @@
                         VerticalAlignment="Bottom"
                         HorizontalAlignment="Center"
                         VerticalContentAlignment="Center"
-                        HorizontalContentAlignment="Center"></Button>
+                        HorizontalContentAlignment="Center">
+                </Button>
             </Grid>
         </TabItem>
     </TabControl>
