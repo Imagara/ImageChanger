@@ -12,8 +12,8 @@ public class Logger
     public Logger()
     {
         FileInfo logFile = new FileInfo(_logFilePath);
-        
         DirectoryInfo dir = new DirectoryInfo(DirPath);
+        
         if (!dir.Exists)
             Directory.CreateDirectory(DirPath);
         

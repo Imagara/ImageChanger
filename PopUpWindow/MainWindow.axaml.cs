@@ -27,17 +27,21 @@ namespace PopUpWindow
         public MainWindow(int screenNum, List<string> imagesPaths, bool autoDel = true)
         {
             InitializeComponent();
-            ImportSettings();
-
-            _screenNum = screenNum;
-            _imagesPaths = imagesPaths;
-            _autoDel = autoDel;
-            Title = $"Screen #{screenNum}";
-
-            if (MainSettings.Mode == 1)
-                MainImage.Source = new Bitmap(MainSettings.Directory + MainSettings.Slash + imagesPaths.First());
-            else
-                Close();
+            try
+            {
+                _screenNum = screenNum;
+                _imagesPaths = imagesPaths;
+                _autoDel = autoDel;
+                Title = $"Screen #{screenNum}";
+                if (MainSettings.Mode == 1)
+                    MainImage.Source = new Bitmap(MainSettings.Directory + MainSettings.Slash + imagesPaths.First());
+                else
+                    Close();
+            }
+            catch (Exception ex)
+            {
+                _logger.CreateLog("Exception when starting the first mode: " + ex.Message);
+            }
         }
 
         public MainWindow(int screenNum)
@@ -45,48 +49,40 @@ namespace PopUpWindow
             InitializeComponent();
             _screenNum = screenNum;
             Title = $"Screen #{screenNum}";
-            ImportSettings();
             if (MainSettings.Mode == 2)
             {
+                //Import window settings
+                try
+                {
+                    FileManager manager = new FileManager(MainSettings.IniPath);
+                    _settings.Rate = Byte.TryParse(manager.GetPrivateString($"display{_screenNum}", "rate"), out var temp)
+                        ? temp
+                        : _settings.Rate;
+                    _settings.DirectoryPath =
+                        manager.GetPrivateString($"display{_screenNum}", "directory").Trim() != string.Empty
+                            ? manager.GetPrivateString($"display{_screenNum}", "directory")
+                            : _settings.DirectoryPath;
+                    _settings.Extensions = manager.GetPrivateString($"display{_screenNum}", "ext") != string.Empty
+                        ? manager.GetPrivateString($"display{_screenNum}", "ext").Split('/')
+                        : _settings.Extensions;
+                    
+                    HelpGrid.IsVisible =
+                        bool.TryParse(
+                            new FileManager(Environment.CurrentDirectory).GetPrivateString("main", "leftpanel"),
+                            out var isVisible)
+                            ? isVisible
+                            : false;
+                    
+                    _logger.CreateLog($"{_screenNum} display: settings successfully imported");
+                }
+                catch (Exception ex)
+                {
+                    _logger.CreateLog($"{_screenNum} display: import settings error: " + ex.Message);
+                }
                 SecondModeCycle();
-                HelpGrid.IsVisible =
-                    bool.TryParse(
-                        new FileManager(Environment.CurrentDirectory).GetPrivateString("main", "leftpanel"),
-                        out var leftPanel)
-                        ? leftPanel
-                        : false;
             }
             else
                 Close();
-        }
-
-        private void ImportSettings()
-        {
-            try
-            {
-                FileManager manager = new FileManager(MainSettings.IniPath);
-
-                _settings.Rate = Byte.TryParse(manager.GetPrivateString($"display{_screenNum}", "rate"), out var temp)
-                    ? temp
-                    : _settings.Rate;
-                _settings.DirectoryPath =
-                    manager.GetPrivateString($"display{_screenNum}", "directory").Trim() != string.Empty
-                        ? manager.GetPrivateString($"display{_screenNum}", "directory")
-                        : _settings.DirectoryPath;
-                _settings.Extensions = manager.GetPrivateString($"display{_screenNum}", "ext") != string.Empty
-                    ? manager.GetPrivateString($"display{_screenNum}", "ext").Split('/')
-                    : _settings.Extensions;
-
-                _logger.CreateLog($"{_screenNum} display: settings successfully imported");
-            }
-            catch (Exception ex)
-            {
-                _logger.CreateLog($"{_screenNum} display: import settings error: " + ex.Message);
-            }
-        }
-
-        private void ExportSettings()
-        {
         }
 
         private async void SecondModeCycle()
