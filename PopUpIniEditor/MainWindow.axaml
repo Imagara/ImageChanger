@@ -22,7 +22,6 @@
                             <ColumnDefinition Width="250" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-
                         <Border BorderBrush="Black"
                                 BorderThickness="1"
                                 Margin="10"
@@ -140,19 +139,54 @@
         </TabItem>
         <TabItem>
             <TabItem.Header>launch</TabItem.Header>
-            <StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <Button Content="Выбрать ini файл"/>
-                    <Label Content="Выбрано: "/>
-                    <Label Name="SelectedIni" Content=""/>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Выбрать ini файл" />
+                        <Label Content="Выбрано: " />
+                        <Label Name="SelectedIniLabel" Content="" />
+                    </StackPanel>
+                    <ScrollViewer HorizontalScrollBarVisibility="Visible">
+                        <ListBox>
+                            123
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="black"
+                                            BorderThickness="1"
+                                            CornerRadius="15"
+                                            Height="200"
+                                            Width="340">
+                                        <Image Source="{Binding Image}" />
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </ScrollViewer>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Выбрать файлы" />
+                        <Label Content="Выбрано: " />
+                        <Label Name="SelectedLabel" Content="" />
+                    </StackPanel>
                 </StackPanel>
-                
-                <StackPanel Orientation="Horizontal">
-                    <Button Content="Выбрать файлы"/>
-                    <Label Content="Выбрано: "/>
-                    <Label Name="SelectedLabel" Content=""/>
-                </StackPanel>
-            </StackPanel>
+                <Button Grid.Row="1"
+                        Width="120"
+                        Height="40"
+                        Content="Сохранить"
+                        VerticalAlignment="Bottom"
+                        HorizontalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        HorizontalContentAlignment="Center"></Button>
+            </Grid>
         </TabItem>
     </TabControl>
 </Window>
