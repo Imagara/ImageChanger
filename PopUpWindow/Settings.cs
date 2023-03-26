@@ -9,9 +9,6 @@ namespace PopUpWindow
         public string DirectoryPath { get; set; } = Environment.CurrentDirectory;
 
         //Частота смены изображений в секундах (Режим №2)
-        public int Rate { get; set; } = 30;
-        //Расширения файлов
-        public string[] Extensions { get; set; } = { "png", "jpeg", "jpg", "bmp", "tiff", "jfif", "webp" };
-
+        public int Rate { get; set; } = 5;
     }
 }

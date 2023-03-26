@@ -11,10 +11,10 @@ namespace PopUpWindow
         public static byte[] ScreensInUse { get; set; } = { 1 };
         public static List<Window> Windows { get; } = new();
         public static char Slash { get; set; } = '/';
-        public static string IniPath { get; } = Environment.CurrentDirectory + Slash + "settings.ini";
+        public static string IniPath { get; } = Environment.CurrentDirectory + Slash + "settings.ini"; 
         public static int Mode { get; set; } = 1;
-        public static string Directory { get; set; } = Environment.CurrentDirectory;
+        public static string Directory { get; set; } = Environment.CurrentDirectory; 
         public static int IniReaderRefreshRate { get; set; } = 1;
-        public static bool AutoDeleteUsedFiles { get; set; } = true;
+        public static string[] Extensions { get; set; } = { "png", "jpeg", "jpg", "bmp", "tiff", "jfif", "webp" };
     }
 }

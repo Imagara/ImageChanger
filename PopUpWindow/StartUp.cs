@@ -16,6 +16,7 @@ namespace PopUpWindow
 
         public StartUp()
         {
+            //Defines a slash for a specific operating system
             SlashDefinition();
 
             //Import main(general) settings
@@ -42,12 +43,13 @@ namespace PopUpWindow
 
             //Screens definition
             MainSettings.AllScreens = Screens.All;
-
+            
+            
             int mode = MainSettings.Mode;
             _logger.CreateLog($"{mode} mode selected");
             if (mode == 1)
             {
-                StartUpWaiter();
+                StartUpWaiter(MainSettings.IniReaderRefreshRate);
             }
             else if (mode == 2)
                 OpenWindows();
@@ -61,51 +63,53 @@ namespace PopUpWindow
                 MainSettings.Slash = '/';
         }
 
-        async void StartUpWaiter(int updateRate = 2)
+        async void StartUpWaiter(int updateRate = 60)
         {
             string launchPath = MainSettings.Directory + MainSettings.Slash + "launch.ini";
 
             int seconds = updateRate;
             while (true)
             {
-                if (new FileInfo(launchPath).Exists)
+                try
                 {
-                    FileManager manager = new FileManager(launchPath);
+                    if (new FileInfo(launchPath).Exists)
+                    {
+                        FileManager manager = new FileManager(launchPath);
 
-                    string dateTimeStr = manager.GetPrivateString("time");
+                        string dateTimeStr = manager.GetPrivateString("time");
 
-                    Regex timeFormat = new Regex(@"^([0-1][0-9]|[2][1-3]):[0-5][0-9]");
+                        Regex timeFormat = new Regex(@"^([0-1][0-9]|[2][1-3]):[0-5][0-9]");
 
-                    DateTime targetTime = new();
-
-                    if (timeFormat.IsMatch(dateTimeStr))
-                        targetTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
-                            Int32.Parse(dateTimeStr.Substring(0, dateTimeStr.IndexOf(':'))),
-                            Int32.Parse(dateTimeStr.Substring(dateTimeStr.IndexOf(':') + 1,
-                                dateTimeStr.Length - dateTimeStr.IndexOf(":", StringComparison.Ordinal) - 1)), 0);
-                    else if (DateTime.TryParse(dateTimeStr, out DateTime tempdt))
-                        targetTime = tempdt;
-
-                    if (targetTime.Equals(DateTime.MinValue))
-                        continue;
-                    if (_targetTime != targetTime)
-                        _logger.CreateLog($"StartUpWaiter: Next Start: {targetTime}");
-                    _targetTime = targetTime;
+                        DateTime targetTime = new();
+                        if (timeFormat.IsMatch(dateTimeStr))
+                            targetTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
+                                Int32.Parse(dateTimeStr.Substring(0, dateTimeStr.IndexOf(':'))),
+                                Int32.Parse(dateTimeStr.Substring(dateTimeStr.IndexOf(':') + 1,
+                                    dateTimeStr.Length - dateTimeStr.IndexOf(":", StringComparison.Ordinal) - 1)), 0);
+                        else if (DateTime.TryParse(dateTimeStr, out DateTime tempdt))
+                            targetTime = tempdt;
+                        if (targetTime.Equals(DateTime.MinValue))
+                            continue;
+                        if (_targetTime != targetTime)
+                            _logger.CreateLog($"StartUpWaiter: Next Start: {targetTime}");
+                        _targetTime = targetTime;
+                    }
                 }
-
+                catch (Exception ex)
+                {
+                    _logger.CreateLog($"StartUpWaiter: Error while reading date");
+                }
+                
                 if (DateTime.Now > _targetTime)
                 {
                     try
                     {
                         List<string> imagesPaths = new();
-                        string[] extensions = { "png", "jpeg", "jpg", "bmp", "tiff", "jfif", "webp" };
-
                         var dir = new DirectoryInfo(MainSettings.Directory);
-
                         FileInfo[] files = dir.GetFiles();
 
                         foreach (FileInfo file in files
-                                     .Where(item => extensions.Any(ext => '.' + ext == item.Extension))
+                                     .Where(item => MainSettings.Extensions.Any(ext => '.' + ext == item.Extension))
                                      .OrderBy(ord => ord.LastWriteTime))
                         {
                             string historyPath = Environment.CurrentDirectory + MainSettings.Slash + "history.hy";
@@ -145,7 +149,7 @@ namespace PopUpWindow
                 MainSettings.Mode = Int32.TryParse(manager.GetPrivateString("main", "mode"), out var mode)
                     ? mode
                     : MainSettings.Mode;
-                
+
                 MainSettings.IniReaderRefreshRate =
                     Byte.TryParse(manager.GetPrivateString("main", "inirefreshrate"), out var temp)
                         ? temp
@@ -165,6 +169,7 @@ namespace PopUpWindow
                             .Where(i => !string.IsNullOrWhiteSpace(i)).Select(byte.Parse).ToArray()
                         : new byte[] { 1 };
                 }
+
                 _logger.CreateLog($"Main settings for mode {mode} successfully imported");
             }
             catch (Exception ex)
@@ -195,6 +200,7 @@ namespace PopUpWindow
 
                     index++;
                 }
+
                 _logger.CreateLog("window opened successfully");
             }
             catch (Exception ex)

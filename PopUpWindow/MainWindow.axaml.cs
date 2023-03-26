@@ -2,13 +2,10 @@ using Avalonia.Controls;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Avalonia.Interactivity;
 using System.Linq;
 using Avalonia.Media.Imaging;
-using Avalonia.Threading;
 using System.Threading.Tasks;
 using Avalonia.Input;
-using Avalonia.Markup.Xaml;
 
 namespace PopUpWindow
 {
@@ -62,10 +59,6 @@ namespace PopUpWindow
                         manager.GetPrivateString($"display{_screenNum}", "directory").Trim() != string.Empty
                             ? manager.GetPrivateString($"display{_screenNum}", "directory")
                             : _settings.DirectoryPath;
-                    _settings.Extensions = manager.GetPrivateString($"display{_screenNum}", "ext") != string.Empty
-                        ? manager.GetPrivateString($"display{_screenNum}", "ext").Split('/')
-                        : _settings.Extensions;
-                    
                     HelpGrid.IsVisible =
                         bool.TryParse(
                             new FileManager(Environment.CurrentDirectory).GetPrivateString("main", "leftpanel"),
@@ -106,7 +99,7 @@ namespace PopUpWindow
 
             foreach (string file in Directory
                          .EnumerateFiles(_settings.DirectoryPath, "*.*", SearchOption.TopDirectoryOnly)
-                         .Where(item => _settings.Extensions.Any(ext => '.' + ext == Path.GetExtension(item))))
+                         .Where(item => MainSettings.Extensions.Any(ext => '.' + ext == Path.GetExtension(item))))
             {
                 _imagesPaths.Add(file);
             }
