@@ -25,7 +25,7 @@
         <Grid  Name="HelpGrid"
                DockPanel.Dock="Left"
                Width="25">
-            <Label Content="Press esc to close"
+            <Label Content="Press ESC to close"
                    FontSize="12"
                    Width="300"
                    VerticalContentAlignment="Top"

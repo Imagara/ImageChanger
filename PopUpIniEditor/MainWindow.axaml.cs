@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Avalonia.Controls;
@@ -9,13 +10,15 @@ namespace PopUpIniEditor;
 public partial class MainWindow : Window
 {
     private FileInfo lauchIniFileInfo;
+    private List<String> _imagesPaths = new();
+    private List<Image> _images = new();
 
     public MainWindow()
     {
         InitializeComponent();
     }
 
-    private async void OpenIniFileButton_OnClick(object? sender, RoutedEventArgs e)
+    private async void ChooseIniFileButton_OnClick(object? sender, RoutedEventArgs e)
     {
         OpenFileDialog op = new OpenFileDialog();
         op.Title = "Выбрать конфигурационный файл";
@@ -29,6 +32,27 @@ public partial class MainWindow : Window
             {
                 SelectedIniLabel.Content = iniFile.Name;
                 lauchIniFileInfo = iniFile;
+            }
+        }
+    }
+
+    private async void ChooseFilesButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        OpenFileDialog op = new OpenFileDialog();
+        op.Title = "Выбрать файлы";
+        op.Filters!.Add(new FileDialogFilter()
+            { Name = "Images", Extensions = { "png", "jpeg", "jpg", "jfif", "webm" } });
+        op.AllowMultiple = true;
+        var result = await op.ShowAsync(this);
+        if (result != null)
+        {
+            foreach (var item in result)
+            {
+                FileInfo file = new FileInfo(item);
+                if (file.Exists)
+                {
+                    _imagesPaths.Add(item);
+                }
             }
         }
     }
