@@ -56,4 +56,24 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    private void ModeSelectComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox)
+        {
+            string mode = ((Label)((ComboBox)sender).SelectedItem).Content.ToString();
+            if (mode == "1")
+            {
+                ModeHintLabel.Content = "Всплывашка";
+                SettingsDirectoryLabel.IsVisible = true;
+                SettingsDirectoryTextBox.IsVisible = true;
+            }
+            else if (mode == "2")
+            {
+                ModeHintLabel.Content = "Карусель";
+                SettingsDirectoryLabel.IsVisible = false;
+                SettingsDirectoryTextBox.IsVisible = false;
+            }
+        }
+    }
 }

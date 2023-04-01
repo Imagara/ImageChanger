@@ -14,7 +14,8 @@
                           VerticalScrollBarVisibility="Visible">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="250" />
+                        <RowDefinition />
+                        <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid>
@@ -26,7 +27,7 @@
                                 BorderThickness="1"
                                 Margin="10"
                                 CornerRadius="15">
-                            <Image Margin="5" />
+                            <Image Source="Assets/ini.png" Margin="5" />
                         </Border>
                         <Border Grid.Column="1"
                                 BorderBrush="black"
@@ -48,7 +49,7 @@
                                             VerticalContentAlignment="Center" />
                                 </StackPanel>
                                 <ListBox Background="transparent">
-                                    123456789
+                                    12345671
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <Border BorderBrush="black"
@@ -64,17 +65,24 @@
                                     </ListBox.ItemTemplate>
                                     <ListBox.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal" />
+                                            <WrapPanel Orientation="Horizontal" />
                                         </ItemsPanelTemplate>
                                     </ListBox.ItemsPanel>
                                 </ListBox>
                                 <Label Content="Mode" />
-                                <ComboBox SelectedItem="1">
-                                    <Label Content="1" />
-                                    <Label Content="2" />
-                                </ComboBox>
-                                <Label Content="Directory" />
-                                <TextBox />
+                                <StackPanel Orientation="Horizontal">
+                                    <ComboBox SelectedItem="1"
+                                              SelectionChanged="ModeSelectComboBox_OnSelectionChanged">
+                                        <Label Content="1" />
+                                        <Label Content="2" />
+                                    </ComboBox>
+                                    <Label Name="ModeHintLabel"
+                                           Content="Tip"
+                                           Foreground="darkgray" />
+                                </StackPanel>
+                                <Label Name="SettingsDirectoryLabel"
+                                       Content="Directory"/>
+                                <TextBox Name="SettingsDirectoryTextBox"/>
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -92,12 +100,16 @@
                                                 <ColumnDefinition Width="150" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
-                                            <Border BorderBrush="black"
-                                                    BorderThickness="1"
-                                                    CornerRadius="15"
-                                                    Height="150"
+                                            <Border Height="150"
                                                     Margin="5,0,5,0">
-                                                <Image Margin="5" />
+                                                <Grid>
+                                                    <Image Margin="5"
+                                                           Source="Assets/display-frame.png" />
+                                                    <Label Content="1"
+                                                           VerticalAlignment="Center"
+                                                           HorizontalAlignment="Center"
+                                                           FontSize="20" />
+                                                </Grid>
                                             </Border>
                                             <Border Grid.Column="1"
                                                     BorderBrush="black"
@@ -120,19 +132,18 @@
                                 </ListBox.ItemTemplate>
                             </ListBox>
                         </StackPanel>
-                        <Grid VerticalAlignment="Bottom"
-                              Height="50">
-                            <Grid Background="gray"
-                                  Opacity="0.85" />
-                            <Button HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Width="120" Height="40"
-                                    Content="Создать"
-                                    Background="Gray"
-                                    VerticalContentAlignment="Center"
-                                    HorizontalContentAlignment="Center">
-                            </Button>
-                        </Grid>
+                    </Grid>
+                    <Grid Grid.Row="2"
+                          VerticalAlignment="Bottom"
+                          Height="50">
+                        <Button HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Width="120" Height="40"
+                                Content="Создать"
+                                Background="Gray"
+                                VerticalContentAlignment="Center"
+                                HorizontalContentAlignment="Center">
+                        </Button>
                     </Grid>
                 </Grid>
             </ScrollViewer>
@@ -146,7 +157,7 @@
                 </Grid.RowDefinitions>
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="Выбрать ini файл" Click="OpenIniFileButton_OnClick"/>
+                        <Button Content="Выбрать ini файл" Click="ChooseIniFileButton_OnClick" />
                         <Label Content="Выбрано: " />
                         <Label Name="SelectedIniLabel" Content="" />
                     </StackPanel>
@@ -173,7 +184,7 @@
                     </ScrollViewer>
 
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="Выбрать файлы" />
+                        <Button Content="Выбрать файлы" Click="ChooseFilesButton_OnClick" />
                         <Label Content="Выбрано: " />
                         <Label Name="SelectedLabel" Content="" />
                     </StackPanel>
