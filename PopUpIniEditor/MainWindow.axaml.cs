@@ -9,9 +9,10 @@ namespace PopUpIniEditor;
 
 public partial class MainWindow : Window
 {
-    private FileInfo lauchIniFileInfo;
+    private FileInfo _lauchIniFileInfo;
     private List<String> _imagesPaths = new();
     private List<Image> _images = new();
+    private List<DisplayClass> _displays = new();
 
     public MainWindow()
     {
@@ -31,7 +32,7 @@ public partial class MainWindow : Window
             if (iniFile.Exists && iniFile.Extension == ".ini")
             {
                 SelectedIniLabel.Content = iniFile.Name;
-                lauchIniFileInfo = iniFile;
+                _lauchIniFileInfo = iniFile;
             }
         }
     }
@@ -65,15 +66,33 @@ public partial class MainWindow : Window
             if (mode == "1")
             {
                 ModeHintLabel.Content = "Всплывашка";
-                SettingsDirectoryLabel.IsVisible = true;
-                SettingsDirectoryTextBox.IsVisible = true;
+                FirstModeStackPanel.IsVisible = true;
+                SecondModeStackPanel.IsVisible = false;
+                _displays.Clear();
+                _displays.Add(new DisplayClass
+                {
+                    DisplayNum = 1,
+                    DirectoryPath = SettingsDirectoryTextBox.Text
+                });
             }
             else if (mode == "2")
             {
                 ModeHintLabel.Content = "Карусель";
-                SettingsDirectoryLabel.IsVisible = false;
-                SettingsDirectoryTextBox.IsVisible = false;
+                FirstModeStackPanel.IsVisible = false;
+                SecondModeStackPanel.IsVisible = true;
             }
         }
+    }
+
+    private void AddDisplayButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        //_displays.Add();
+    }
+
+    class DisplayClass
+    {
+        public int DisplayNum;
+        public string? DirectoryPath;
+        public int? Rate;
     }
 }

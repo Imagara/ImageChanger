@@ -4,7 +4,6 @@ namespace PopUpWindow
 {
     public class Settings
     {
-
         //Директория в которой хранятся изображения
         public string DirectoryPath { get; set; } = Environment.CurrentDirectory;
 

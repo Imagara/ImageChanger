@@ -26,50 +26,19 @@
                         <Border BorderBrush="Black"
                                 BorderThickness="1"
                                 Margin="10"
-                                CornerRadius="15">
-                            <Image Source="Assets/ini.png" Margin="5" />
+                                CornerRadius="15"
+                                Background="#ebebe8">
+                            <Image Source="Assets/ini.png"
+                                   Margin="5" />
                         </Border>
                         <Border Grid.Column="1"
                                 BorderBrush="black"
                                 BorderThickness="1"
                                 Margin="10"
-                                CornerRadius="15">
+                                CornerRadius="15"
+                                Background="#ebebe8">
                             <StackPanel Margin="10">
-                                <StackPanel Orientation="Horizontal">
-                                    <Label Content="Display:" />
-                                    <Button Content="+"
-                                            Width="30"
-                                            Height="30"
-                                            HorizontalContentAlignment="Center"
-                                            VerticalContentAlignment="Center" />
-                                    <Button Content="⌫"
-                                            Width="40"
-                                            Height="30"
-                                            HorizontalContentAlignment="Center"
-                                            VerticalContentAlignment="Center" />
-                                </StackPanel>
-                                <ListBox Background="transparent">
-                                    12345671
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border BorderBrush="black"
-                                                    BorderThickness="1"
-                                                    CornerRadius="15"
-                                                    Height="30"
-                                                    Width="30">
-                                                <Label Content="1"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center" />
-                                            </Border>
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                    <ListBox.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <WrapPanel Orientation="Horizontal" />
-                                        </ItemsPanelTemplate>
-                                    </ListBox.ItemsPanel>
-                                </ListBox>
-                                <Label Content="Mode" />
+                                <Label Content="Режим работы программы" />
                                 <StackPanel Orientation="Horizontal">
                                     <ComboBox SelectedItem="1"
                                               SelectionChanged="ModeSelectComboBox_OnSelectionChanged">
@@ -77,12 +46,59 @@
                                         <Label Content="2" />
                                     </ComboBox>
                                     <Label Name="ModeHintLabel"
-                                           Content="Tip"
+                                           Content=""
                                            Foreground="darkgray" />
                                 </StackPanel>
-                                <Label Name="SettingsDirectoryLabel"
-                                       Content="Directory"/>
-                                <TextBox Name="SettingsDirectoryTextBox"/>
+                                <StackPanel Name="FirstModeStackPanel" IsVisible="False">
+                                    <Label Content="Директория с файлами" />
+                                    <TextBox Name="SettingsDirectoryTextBox" />
+                                </StackPanel>
+                                <StackPanel Name="SecondModeStackPanel" IsVisible="False">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Экран для вывода:" />
+                                        <TextBox Width="30"/>
+                                        <Button Content="+"
+                                                Width="30"
+                                                Height="30"
+                                                HorizontalContentAlignment="Center"
+                                                VerticalContentAlignment="Center"
+                                                Click="AddDisplayButton_OnClick">
+                                            <ToolTip.Tip>
+                                                <TextBlock>Добавляет экран</TextBlock>
+                                            </ToolTip.Tip>
+                                        </Button>
+                                        <Button Content="⌫"
+                                                Width="40"
+                                                Height="30"
+                                                HorizontalContentAlignment="Center"
+                                                VerticalContentAlignment="Center">
+                                            <ToolTip.Tip>
+                                                <TextBlock>Удаляет выбранный экран из списка</TextBlock>
+                                            </ToolTip.Tip>
+                                        </Button>
+                                    </StackPanel>
+                                    <ListBox Background="transparent">
+                                        12345671
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="black"
+                                                        BorderThickness="1"
+                                                        CornerRadius="15"
+                                                        Height="30"
+                                                        Width="30">
+                                                    <Label Content="1"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                        <ListBox.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Horizontal" />
+                                            </ItemsPanelTemplate>
+                                        </ListBox.ItemsPanel>
+                                    </ListBox>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -116,7 +132,8 @@
                                                     BorderThickness="1"
                                                     CornerRadius="15"
                                                     Height="200"
-                                                    Margin="5,0,5,0">
+                                                    Margin="5,0,5,0"
+                                                    Background="#ebebe8">
                                                 <StackPanel Margin="10">
                                                     <Label Content="Directory" />
                                                     <TextBox />
