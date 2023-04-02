@@ -76,7 +76,8 @@
                                                 Width="40"
                                                 Height="30"
                                                 HorizontalContentAlignment="Center"
-                                                VerticalContentAlignment="Center">
+                                                VerticalContentAlignment="Center"
+                                                Command="{Binding RemoveDisplayCommand}">
                                             <ToolTip.Tip>
                                                 <TextBlock>Удаляет выбранный экран из списка</TextBlock>
                                             </ToolTip.Tip>
@@ -91,9 +92,9 @@
                                                         CornerRadius="15"
                                                         Height="30"
                                                         Width="30">
-                                                    <Label Content="1"
+                                                    <Label Content="{Binding DisplayNum}"
                                                            HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center" />
+                                                           VerticalAlignment="Center"/>
                                                 </Border>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>

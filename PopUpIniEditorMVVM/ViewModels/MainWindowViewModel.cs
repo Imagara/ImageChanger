@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Reactive;
 using System.Runtime.CompilerServices;
 using Avalonia.Controls;
@@ -13,18 +14,36 @@ namespace PopUpIniEditorMVVM.ViewModels;
 public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler PropertyChanged;
-    
+
     public ReactiveCommand<Unit, Unit> AddDisplayCommand { get; }
+    public ReactiveCommand<Unit, Unit> RemoveDisplayCommand { get; }
 
     public MainWindowViewModel()
     {
         AddDisplayCommand = ReactiveCommand.Create(AddDisplay);
+        RemoveDisplayCommand = ReactiveCommand.Create(RemoveDisplay);
     }
 
-    
+
     public void AddDisplay()
     {
-        new InfoWindow("test").Show();
+        int.TryParse(SelectedDisplay, out var display);
+
+        if (display > 0 && Displays.All(item => item.DisplayNum != display))
+        {
+            Displays.Add(new DisplayClass
+            {
+                DisplayNum = display
+            });
+        }
+    }
+
+    public void RemoveDisplay()
+    {
+        int.TryParse(SelectedDisplay, out var display);
+
+        if (Displays.Any(item => item.DisplayNum == display))
+            Displays.Remove(Displays.First(item => item.DisplayNum == display));
     }
 
     private Object _selectedMode = 1;
@@ -39,7 +58,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             ModeChanged();
         }
     }
-    
+
     private bool _isFirstModeStackPanelVisible;
 
     public bool IsFirstModeStackPanelVisible
@@ -51,7 +70,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
-    
+
     private bool _isSecondModeStackPanelVisible;
 
     public bool IsSecondModeStackPanelVisible
@@ -89,7 +108,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         get => _modeHint;
         set
         {
-             _modeHint = value;
+            _modeHint = value;
             OnPropertyChanged();
         }
     }
@@ -104,7 +123,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             ModeHint = "Всплывашка";
             IsFirstModeStackPanelVisible = true;
             IsSecondModeStackPanelVisible = false;
-            
+
             Displays.Clear();
             Displays.Add(new DisplayClass
             {
@@ -116,10 +135,10 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         else if (mode == 2)
         {
             ModeHint = "Карусель";
-            
+
             IsFirstModeStackPanelVisible = false;
             IsSecondModeStackPanelVisible = true;
-            
+
             Displays.Clear();
         }
     }
@@ -133,6 +152,18 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             _greetingsText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string _selectedDisplay;
+
+    public string SelectedDisplay
+    {
+        get => _selectedDisplay;
+        set
+        {
+            _selectedDisplay = value;
             OnPropertyChanged();
         }
     }
