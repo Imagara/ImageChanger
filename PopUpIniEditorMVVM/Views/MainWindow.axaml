@@ -1,12 +1,19 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PopUpIniEditorMVVM.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="PopUpIniEditor.MainWindow"
-        MinHeight="300"
-        MinWidth="600"
-        Title="IniCreatorWindow">
+        x:Class="PopUpIniEditorMVVM.Views.MainWindow"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="PopUpIniEditorMVVM">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
     <TabControl>
         <TabItem>
             <TabItem.Header>settings</TabItem.Header>
@@ -28,7 +35,7 @@
                                 Margin="10"
                                 CornerRadius="15"
                                 Background="#ebebe8">
-                            <Image Source="Assets/ini.png"
+                            <Image Source="../Assets/ini.png"
                                    Margin="5" />
                         </Border>
                         <Border Grid.Column="1"
@@ -40,29 +47,27 @@
                             <StackPanel Margin="10">
                                 <Label Content="Режим работы программы" />
                                 <StackPanel Orientation="Horizontal">
-                                    <ComboBox SelectedItem="1"
-                                              SelectionChanged="ModeSelectComboBox_OnSelectionChanged">
+                                    <ComboBox SelectedItem="{Binding SelectedMode}">
                                         <Label Content="1" />
                                         <Label Content="2" />
                                     </ComboBox>
-                                    <Label Name="ModeHintLabel"
-                                           Content=""
+                                    <Label Content="{Binding ModeHint}"
                                            Foreground="darkgray" />
                                 </StackPanel>
-                                <StackPanel Name="FirstModeStackPanel" IsVisible="False">
+                                <StackPanel IsVisible="{Binding IsFirstModeStackPanelVisible}">
                                     <Label Content="Директория с файлами" />
                                     <TextBox Name="SettingsDirectoryTextBox" />
                                 </StackPanel>
-                                <StackPanel Name="SecondModeStackPanel" IsVisible="False">
+                                <StackPanel IsVisible="{Binding IsSecondModeStackPanelVisible}">
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Экран для вывода:" />
-                                        <TextBox Width="30" />
+                                        <TextBox Width="30" Text="{Binding SelectedDisplay}"/>
                                         <Button Content="+"
                                                 Width="30"
                                                 Height="30"
                                                 HorizontalContentAlignment="Center"
                                                 VerticalContentAlignment="Center"
-                                                Click="AddDisplayButton_OnClick">
+                                                Command="{Binding AddDisplayCommand}">
                                             <ToolTip.Tip>
                                                 <TextBlock>Добавляет экран</TextBlock>
                                             </ToolTip.Tip>
@@ -104,12 +109,11 @@
                     </Grid>
                     <Grid Grid.Row="1">
                         <StackPanel>
-                            <Label Content="Displays Settings"
+                            <Label Content="Экраны для вывода"
                                    VerticalAlignment="Top"
                                    HorizontalAlignment="Center" />
-                            <ListBox
-                                Background="transparent"
-                                Items="{Binding Path=Displays}">
+                            <ListBox Background="transparent"
+                                     Items="{Binding Path=Displays}">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Grid>
@@ -121,7 +125,7 @@
                                                     Margin="5,0,5,0">
                                                 <Grid>
                                                     <Image Margin="5"
-                                                           Source="Assets/display-frame.png" />
+                                                           Source="../Assets/display-frame.png" />
                                                     <Label Content="{Binding DisplayNum}"
                                                            VerticalAlignment="Center"
                                                            HorizontalAlignment="Center"
@@ -135,18 +139,14 @@
                                                     Height="200"
                                                     Margin="5,0,5,0"
                                                     Background="#ebebe8">
-                                                <StackPanel Margin="10">
+                                                <StackPanel Margin="10" IsVisible="{Binding IsModeTwo}">
                                                     <Label Content="Directory" />
-                                                    <TextBox Text="{Binding DirectoryPath}"
-                                                             IsEnabled="{Binding IsModeTwo}" />
-                                                    <Label Content="Rate"
-                                                           IsVisible="{Binding IsModeTwo}" />
+                                                    <TextBox Text="{Binding DirectoryPath}" />
+                                                    <Label Content="Rate" />
                                                     <TextBox Width="70"
-                                                             HorizontalAlignment="Left"
-                                                             IsVisible="{Binding IsModeTwo}" />
-                                                    <Label Content="Extensions"
-                                                           IsVisible="{Binding IsModeTwo}" />
-                                                    <TextBox IsVisible="{Binding IsModeTwo}" />
+                                                             HorizontalAlignment="Left" />
+                                                    <Label Content="Extensions" />
+                                                    <TextBox />
                                                 </StackPanel>
                                             </Border>
                                         </Grid>
@@ -179,7 +179,8 @@
                 </Grid.RowDefinitions>
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="Выбрать ini файл" Click="ChooseIniFileButton_OnClick" />
+                        <Button Content="Выбрать ini файл" />
+                        <!-- Click="ChooseIniFileButton_OnClick" /> -->
                         <Label Content="Выбрано: " />
                         <Label Name="SelectedIniLabel" Content="" />
                     </StackPanel>
@@ -206,7 +207,8 @@
                     </ScrollViewer>
 
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="Выбрать файлы" Click="ChooseFilesButton_OnClick" />
+                        <Button Content="Выбрать файлы" />
+                        <!-- Click="ChooseFilesButton_OnClick" /> -->
                         <Label Content="Выбрано: " />
                         <Label Name="SelectedLabel" Content="" />
                     </StackPanel>
@@ -223,13 +225,11 @@
             </Grid>
         </TabItem>
         <TabItem Header="Temp">
-            <Grid>
-                <TextBox Text="{Binding Temp}"></TextBox>
-                <Button Click="Button_OnClick"
-                        Width="120"
-                        Height="30">
-                </Button>
-            </Grid>
+            <StackPanel>
+                <TextBox Text="{Binding GreetingsText, Mode=OneWayToSource}" Width="250" Height="40" />
+                <TextBox Text="{Binding GreetingsText, Mode=OneWay}" Width="250" Height="40" />
+                <Button Width="120" Height="40" Command="{Binding TestClick}" Content="Click"></Button>
+            </StackPanel>
         </TabItem>
     </TabControl>
 </Window>

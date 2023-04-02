@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using Avalonia.Controls;
@@ -12,11 +13,22 @@ public partial class MainWindow : Window
     private FileInfo _lauchIniFileInfo;
     private List<String> _imagesPaths = new();
     private List<Image> _images = new();
-    private List<DisplayClass> _displays = new();
+
+    public string Temp { get; set; } = "qwe";
+    public ObservableCollection<DisplayClass> Displays { get; set; } = new();
 
     public MainWindow()
     {
         InitializeComponent();
+        Displays.Add(new DisplayClass
+        {
+            DisplayNum = 1
+        });
+        Displays.Add(new DisplayClass
+        {
+            DisplayNum = 2
+        });
+        DataContext = this;
     }
 
     private async void ChooseIniFileButton_OnClick(object? sender, RoutedEventArgs e)
@@ -68,11 +80,15 @@ public partial class MainWindow : Window
                 ModeHintLabel.Content = "Всплывашка";
                 FirstModeStackPanel.IsVisible = true;
                 SecondModeStackPanel.IsVisible = false;
-                _displays.Clear();
-                _displays.Add(new DisplayClass
+
+                SettingsDirectoryTextBox.Text = Environment.CurrentDirectory;
+
+                Displays.Clear();
+                Displays.Add(new DisplayClass
                 {
                     DisplayNum = 1,
-                    DirectoryPath = SettingsDirectoryTextBox.Text
+                    DirectoryPath = Environment.CurrentDirectory,
+                    IsModeTwo = false
                 });
             }
             else if (mode == "2")
@@ -80,6 +96,8 @@ public partial class MainWindow : Window
                 ModeHintLabel.Content = "Карусель";
                 FirstModeStackPanel.IsVisible = false;
                 SecondModeStackPanel.IsVisible = true;
+                
+                Displays.Clear();
             }
         }
     }
@@ -89,10 +107,17 @@ public partial class MainWindow : Window
         //_displays.Add();
     }
 
-    class DisplayClass
+    public class DisplayClass
     {
-        public int DisplayNum;
-        public string? DirectoryPath;
-        public int? Rate;
+        public int DisplayNum { get; set; }
+        public string? DirectoryPath { get; set; }
+        public int? Rate { get; set; }
+        public bool? IsModeTwo { get; set; }
+    }
+
+    private void Button_OnClick(object? sender, RoutedEventArgs e)
+    {
+        // Temp = "button";
+        new InfoWindow(Temp).Show();
     }
 }
