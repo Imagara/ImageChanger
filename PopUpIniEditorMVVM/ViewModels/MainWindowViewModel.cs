@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive;
@@ -53,6 +54,17 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             }
 
             File.WriteAllLines("settings.ini", args);
+            
+            //need to test
+            Process PrFolder = new Process();
+            ProcessStartInfo psi = new ProcessStartInfo();
+            string file = Environment.CurrentDirectory + Slash + "settings.ini";
+            psi.CreateNoWindow = true;
+            psi.WindowStyle = ProcessWindowStyle.Normal;
+            psi.FileName = "explorer";
+            psi.Arguments = @"/n, /select, " + file;
+            PrFolder.StartInfo = psi;
+            PrFolder.Start();
         }
     }
 
