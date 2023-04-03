@@ -5,8 +5,6 @@ VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopUpWindow", "PopUpWindow\PopUpWindow.csproj", "{9734868C-1374-4DEF-A299-98982A9C9541}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopUpIniEditor", "PopUpIniEditor\PopUpIniEditor.csproj", "{75F544CC-DB8A-4A20-88CA-2E980D3296C5}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopUpIniEditorMVVM", "PopUpIniEditorMVVM\PopUpIniEditorMVVM.csproj", "{004C9E4C-3A2F-4744-B124-1C90A8D18D60}"
 EndProject
 Global
@@ -19,10 +17,6 @@ Global
 		{9734868C-1374-4DEF-A299-98982A9C9541}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9734868C-1374-4DEF-A299-98982A9C9541}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9734868C-1374-4DEF-A299-98982A9C9541}.Release|Any CPU.Build.0 = Release|Any CPU
-		{75F544CC-DB8A-4A20-88CA-2E980D3296C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{75F544CC-DB8A-4A20-88CA-2E980D3296C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{75F544CC-DB8A-4A20-88CA-2E980D3296C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{75F544CC-DB8A-4A20-88CA-2E980D3296C5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{004C9E4C-3A2F-4744-B124-1C90A8D18D60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{004C9E4C-3A2F-4744-B124-1C90A8D18D60}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{004C9E4C-3A2F-4744-B124-1C90A8D18D60}.Release|Any CPU.ActiveCfg = Release|Any CPU

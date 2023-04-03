@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Runtime.CompilerServices;
@@ -17,13 +18,43 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     public ReactiveCommand<Unit, Unit> AddDisplayCommand { get; }
     public ReactiveCommand<Unit, Unit> RemoveDisplayCommand { get; }
+    public ReactiveCommand<Unit, Unit> UpdateSettingsIniFileCommand { get; }
 
     public MainWindowViewModel()
     {
         AddDisplayCommand = ReactiveCommand.Create(AddDisplay);
         RemoveDisplayCommand = ReactiveCommand.Create(RemoveDisplay);
+        UpdateSettingsIniFileCommand = ReactiveCommand.Create(UpdateSettingsIniFile);
     }
 
+    public void UpdateSettingsIniFile()
+    {
+        string? selectedModeContent = ((Label)_selectedMode).Content.ToString();
+        int.TryParse(selectedModeContent, out var mode);
+        if (mode is 1 or 2)
+        {
+            List<string> args = new();
+            args.Add("[main]\n" +
+                     $"mode={mode}");
+            if (mode is 1)
+            {
+                args.Add($"directory={_settingsDirectoryContent}");
+            }
+            else
+            {
+                var screens = _displays.Select(item => item.DisplayNum).ToList();
+                args.Add($"screens={string.Join("/", screens)}");
+                foreach (var display in _displays)
+                {
+                    args.Add($"[display{display.DisplayNum}]\n" +
+                             $"directory={display.DirectoryPath}\n" +
+                             $"rate={display.Rate}\n");
+                }
+            }
+
+            File.WriteAllLines("settings.ini", args);
+        }
+    }
 
     public void AddDisplay()
     {
@@ -83,13 +114,19 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    private ObservableCollection<DisplayClass> _displays = new()
+    private string _settingsDirectoryContent;
+
+    public string SettingsDirectoryContent
     {
-        new DisplayClass
+        get => _settingsDirectoryContent;
+        set
         {
-            DisplayNum = 1
+            _settingsDirectoryContent = value;
+            OnPropertyChanged();
         }
-    };
+    }
+
+    private ObservableCollection<DisplayClass> _displays = new();
 
     public ObservableCollection<DisplayClass> Displays
     {
@@ -113,6 +150,18 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
+    private string _updateSettingsIniFileContent = "Создать";
+
+    public string UpdateSettingsIniFileContent
+    {
+        get => _updateSettingsIniFileContent;
+        set
+        {
+            _updateSettingsIniFileContent = value;
+            OnPropertyChanged();
+        }
+    }
+
     private void ModeChanged()
     {
         string? selectedModeContent = ((Label)_selectedMode).Content.ToString();
@@ -128,7 +177,6 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             Displays.Add(new DisplayClass
             {
                 DisplayNum = 1,
-                DirectoryPath = Environment.CurrentDirectory,
                 IsModeTwo = false
             });
         }
@@ -140,19 +188,6 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             IsSecondModeStackPanelVisible = true;
 
             Displays.Clear();
-        }
-    }
-
-
-    private string _greetingsText;
-
-    public string GreetingsText
-    {
-        get => _greetingsText;
-        set
-        {
-            _greetingsText = value;
-            OnPropertyChanged();
         }
     }
 

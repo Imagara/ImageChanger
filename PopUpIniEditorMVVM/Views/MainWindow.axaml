@@ -57,7 +57,7 @@
                                 </StackPanel>
                                 <StackPanel IsVisible="{Binding IsFirstModeStackPanelVisible}">
                                     <Label Content="Директория с файлами" />
-                                    <TextBox Name="SettingsDirectoryTextBox" />
+                                    <TextBox Text="{Binding SettingsDirectoryContent}" />
                                 </StackPanel>
                                 <StackPanel IsVisible="{Binding IsSecondModeStackPanelVisible}">
                                     <StackPanel Orientation="Horizontal">
@@ -115,9 +115,7 @@
                                    VerticalAlignment="Top"
                                    HorizontalAlignment="Center" />
                             <ListBox Background="transparent"
-                                     Items="{Binding Path=Displays}"
-                                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                     Items="{Binding Path=Displays}">
                                 <ListBox.Template>
                                     <ControlTemplate>
                                         <ItemsPresenter />
@@ -152,10 +150,9 @@
                                                     <Label Content="Directory" />
                                                     <TextBox Text="{Binding DirectoryPath}" />
                                                     <Label Content="Rate" />
-                                                    <TextBox Width="70"
+                                                    <TextBox Text="{Binding Rate}"
+                                                             Width="70"
                                                              HorizontalAlignment="Left" />
-                                                    <Label Content="Extensions" />
-                                                    <TextBox />
                                                 </StackPanel>
                                             </Border>
                                         </Grid>
@@ -170,7 +167,8 @@
                         <Button HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Width="120" Height="40"
-                                Content="Создать"
+                                Content="{Binding UpdateSettingsIniFileContent}"
+                                Command="{Binding UpdateSettingsIniFileCommand}"
                                 Background="Gray"
                                 VerticalContentAlignment="Center"
                                 HorizontalContentAlignment="Center">
