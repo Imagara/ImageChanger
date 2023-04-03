@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace PopUpWindow
@@ -130,35 +131,15 @@ namespace PopUpWindow
         {
             try
             {
-                FileInfo historyFile = new(_path);
-                if (historyFile.Exists)
-                {
-                    StreamReader sr = new(_path);
-                    while (!sr.EndOfStream)
-                    {
-                        string str = sr.ReadLine();
-                        if (str == aFileName + "|" + aLastWriteTime)
-                        {
-                            sr.Close();
-                            return true;
-                        }
-                    }
-
-                    sr.Close();
-                }
+                if (File.ReadLines(_path).Contains(aFileName + "|" + aLastWriteTime))
+                    return true;
+                return false;
             }
             catch (Exception ex)
             {
                 _logger.CreateLog($"Error while reading file({_path}): " + ex.Message);
                 return false;
             }
-
-            return false;
-        }
-
-        //Пишет значение в INI-файл (по указанным секции и ключу) 
-        public void WritePrivateString(string aSection, string aKey, string aValue)
-        {
         }
 
         public void WriteHistoryString(string aFileName, DateTime aCreationTime)
