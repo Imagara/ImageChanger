@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="PopUpIniEditorMVVM.Views.MainWindow"
+        MinWidth="600" MinHeight="300"
         Icon="/Assets/avalonia-logo.ico"
         Title="PopUpIniEditorMVVM">
 
@@ -61,7 +62,7 @@
                                 <StackPanel IsVisible="{Binding IsSecondModeStackPanelVisible}">
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Экран для вывода:" />
-                                        <TextBox Width="30" Text="{Binding SelectedDisplay}"/>
+                                        <TextBox Width="30" Text="{Binding SelectedDisplay}" />
                                         <Button Content="+"
                                                 Width="30"
                                                 Height="30"
@@ -94,7 +95,7 @@
                                                         Width="30">
                                                     <Label Content="{Binding DisplayNum}"
                                                            HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"/>
+                                                           VerticalAlignment="Center" />
                                                 </Border>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
@@ -114,7 +115,14 @@
                                    VerticalAlignment="Top"
                                    HorizontalAlignment="Center" />
                             <ListBox Background="transparent"
-                                     Items="{Binding Path=Displays}">
+                                     Items="{Binding Path=Displays}"
+                                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.Template>
+                                    <ControlTemplate>
+                                        <ItemsPresenter />
+                                    </ControlTemplate>
+                                </ListBox.Template>
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Grid>
@@ -224,13 +232,6 @@
                         HorizontalContentAlignment="Center">
                 </Button>
             </Grid>
-        </TabItem>
-        <TabItem Header="Temp">
-            <StackPanel>
-                <TextBox Text="{Binding GreetingsText, Mode=OneWayToSource}" Width="250" Height="40" />
-                <TextBox Text="{Binding GreetingsText, Mode=OneWay}" Width="250" Height="40" />
-                <Button Width="120" Height="40" Command="{Binding TestClick}" Content="Click"></Button>
-            </StackPanel>
         </TabItem>
     </TabControl>
 </Window>
