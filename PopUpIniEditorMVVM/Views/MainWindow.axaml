@@ -3,16 +3,17 @@
         xmlns:vm="using:PopUpIniEditorMVVM.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PopUpIniEditorMVVM"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="PopUpIniEditorMVVM.Views.MainWindow"
         MinWidth="600" MinHeight="300"
         Icon="/Assets/avalonia-logo.ico"
         Title="PopUpIniEditorMVVM"
         Name="Window">
-
+<Window.Resources>
+    <local:PathToBitmapConverter x:Key="pathToBitmapConverter"/>
+</Window.Resources>
     <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainWindowViewModel />
     </Design.DataContext>
 
@@ -54,15 +55,16 @@
                                         <Label Content="2" />
                                     </ComboBox>
                                     <Label Content="{Binding ModeHint}"
+                                           Margin="0,3,0,0"
                                            Foreground="darkgray" />
                                 </StackPanel>
                                 <StackPanel IsVisible="{Binding IsFirstModeStackPanelVisible}">
                                     <Label Content="Директория с файлами" />
                                     <Grid>
-                                        <TextBox Text="{Binding SettingsDirectoryContent}" />
+                                        <TextBox Text="{Binding Directory}" />
                                         <Button HorizontalAlignment="Right"
                                                 Content="🔍"
-                                                Command="{Binding DirectorySelectCommand}" 
+                                                Command="{Binding DirectorySelectCommand}"
                                                 CommandParameter="{Binding ElementName=Window}" />
                                     </Grid>
                                 </StackPanel>
@@ -81,8 +83,7 @@
                                             </ToolTip.Tip>
                                         </Button>
                                         <Button Content="⌫"
-                                                Width="40"
-                                                Height="30"
+                                                Width="40" Height="30"
                                                 HorizontalContentAlignment="Center"
                                                 VerticalContentAlignment="Center"
                                                 Command="{Binding RemoveDisplayCommand}">
@@ -192,15 +193,42 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <StackPanel>
+                    <Label Content="Launch файл"
+                           Margin="0,3,0,0" />
+                    <Grid>
+                        <TextBox Text="{Binding LaunchPath}" />
+                        <Button HorizontalAlignment="Right"
+                                Content="🔍"
+                                Command="{Binding LaunchSelectCommand}"
+                                CommandParameter="{Binding ElementName=Window}"/>
+                    </Grid>
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="Выбрать ini файл" />
-                        <!-- Click="ChooseIniFileButton_OnClick" /> -->
-                        <Label Content="Выбрано: " />
-                        <Label Name="SelectedIniLabel" Content="" />
+                        <Label Content="{Binding AnnouncementCountContent}" />
+                        <Button Content="+"
+                                Width="30"
+                                Height="30"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                Command="{Binding AddAnnouncementCommand}"
+                                CommandParameter="{Binding ElementName=Window}" >
+                            <ToolTip.Tip>
+                                <TextBlock>Добавление объявления</TextBlock>
+                            </ToolTip.Tip>
+                        </Button>
+                        <Button Content="⌫"
+                                Width="40" Height="30"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                Command="{Binding RemoveAnnouncementCommand}">
+                            <ToolTip.Tip>
+                                <TextBlock>Удаляет выбранное обьявление из списка</TextBlock>
+                            </ToolTip.Tip>
+                        </Button>
                     </StackPanel>
+
                     <ScrollViewer HorizontalScrollBarVisibility="Visible">
-                        <ListBox>
-                            123
+                        <ListBox Items="{Binding Announcements}"
+                                 Background="transparent">
                             <ListBox.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <StackPanel Orientation="Horizontal" />
@@ -212,20 +240,26 @@
                                             BorderThickness="1"
                                             CornerRadius="15"
                                             Height="200"
-                                            Width="340">
-                                        <Image Source="{Binding Image}" />
+                                            Width="340"
+                                            Background="#ebebe8">
+                                        <StackPanel>
+                                            <Image Source="{Binding ImagePath, Converter={StaticResource pathToBitmapConverter}}"
+                                                   Stretch="Uniform"
+                                                   Margin="5"
+                                                   Height="155"
+                                                   ClipToBounds="True" />
+                                            <StackPanel Orientation="Horizontal"
+                                                        HorizontalAlignment="Center">
+                                                <Label Content="Актуально до:"></Label>
+                                                <TextBox Text="{Binding ActualUntil}" 
+                                                         Margin="0,-2,0,0" />
+                                            </StackPanel>
+                                        </StackPanel>
                                     </Border>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
                     </ScrollViewer>
-
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="Выбрать файлы" />
-                        <!-- Click="ChooseFilesButton_OnClick" /> -->
-                        <Label Content="Выбрано: " />
-                        <Label Name="SelectedLabel" Content="" />
-                    </StackPanel>
                 </StackPanel>
                 <Button Grid.Row="1"
                         Width="120"

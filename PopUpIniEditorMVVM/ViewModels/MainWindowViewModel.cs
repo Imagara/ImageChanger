@@ -8,7 +8,6 @@ using System.Linq;
 using System.Reactive;
 using System.Runtime.CompilerServices;
 using Avalonia.Controls;
-using PopUpIniEditorMVVM.Views;
 using ReactiveUI;
 
 namespace PopUpIniEditorMVVM.ViewModels;
@@ -16,21 +15,28 @@ namespace PopUpIniEditorMVVM.ViewModels;
 public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler PropertyChanged;
+    private const char Slash = '/';
 
     public ReactiveCommand<Unit, Unit> AddDisplayCommand { get; }
     public ReactiveCommand<Unit, Unit> RemoveDisplayCommand { get; }
+    public ReactiveCommand<Window, Unit> AddAnnouncementCommand { get; }
+    public ReactiveCommand<Unit, Unit> RemoveAnnouncementCommand { get; }
     public ReactiveCommand<Unit, Unit> UpdateSettingsIniFileCommand { get; }
     public ReactiveCommand<Window, Unit> DirectorySelectCommand { get; }
+    public ReactiveCommand<Window, Unit> LaunchSelectCommand { get; }
 
     public MainWindowViewModel()
     {
         AddDisplayCommand = ReactiveCommand.Create(AddDisplay);
         RemoveDisplayCommand = ReactiveCommand.Create(RemoveDisplay);
+        AddAnnouncementCommand = ReactiveCommand.Create<Window>(AddAnnouncement);
+        RemoveAnnouncementCommand = ReactiveCommand.Create(RemoveAnnouncement);
         UpdateSettingsIniFileCommand = ReactiveCommand.Create(UpdateSettingsIniFile);
         DirectorySelectCommand = ReactiveCommand.Create<Window>(DirectorySelect);
+        LaunchSelectCommand = ReactiveCommand.Create<Window>(LaunchSelect);
     }
 
-    public void UpdateSettingsIniFile()
+    private void UpdateSettingsIniFile()
     {
         string? selectedModeContent = ((Label)_selectedMode).Content.ToString();
         int.TryParse(selectedModeContent, out var mode);
@@ -41,7 +47,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                      $"mode={mode}");
             if (mode is 1)
             {
-                args.Add($"directory={_settingsDirectoryContent}");
+                args.Add($"directory={_directory}");
             }
             else
             {
@@ -53,10 +59,10 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                              $"directory={display.DirectoryPath}\n" +
                              $"rate={display.Rate}\n");
                 }
-            }
+            } 
 
             File.WriteAllLines("settings.ini", args);
-            
+
             //need to test
             Process PrFolder = new Process();
             ProcessStartInfo psi = new ProcessStartInfo();
@@ -69,35 +75,110 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             PrFolder.Start();
         }
     }
-
-    public void AddDisplay()
+    
+    private void ModeChanged()
     {
-        int.TryParse(SelectedDisplay, out var display);
+        string? selectedModeContent = ((Label)_selectedMode).Content.ToString();
+        int.TryParse(selectedModeContent, out var mode);
 
-        if (display > 0 && Displays.All(item => item.DisplayNum != display))
+        if (mode == 1)
         {
+            ModeHint = "Всплывашка";
+            IsFirstModeStackPanelVisible = true;
+            IsSecondModeStackPanelVisible = false;
+
+            Displays.Clear();
             Displays.Add(new DisplayClass
             {
-                DisplayNum = display
+                DisplayNum = 1,
+                IsModeTwo = false
             });
         }
+        else if (mode == 2)
+        {
+            ModeHint = "Карусель";
+
+            IsFirstModeStackPanelVisible = false;
+            IsSecondModeStackPanelVisible = true;
+
+            Displays.Clear();
+        }
     }
-    public async void DirectorySelect(Window window)
+    private async void DirectorySelect(Window window)
     {
         OpenFolderDialog ofd = new OpenFolderDialog();
         ofd.Title = "Select folder";
         var result = await ofd.ShowAsync(window);
         if (result != null)
-            SettingsDirectoryContent = result;
+            Directory = result;
     }
 
-    public void RemoveDisplay()
+    private async void LaunchSelect(Window window)
+    {
+        OpenFileDialog op = new OpenFileDialog();
+        op.Title = "Выбрать конфигурационный файл";
+        op.Filters!.Add(new FileDialogFilter() { Name = "Ini Files", Extensions = { "ini" } });
+        op.AllowMultiple = false;
+        var result = await op.ShowAsync(window);
+        if (result != null)
+        {
+            FileInfo iniFile = new FileInfo(result.First());
+            if (iniFile.Exists && iniFile.Extension == ".ini")
+                LaunchPath = iniFile.FullName;
+        }
+    }
+    private void AddDisplay()
+    {
+        int.TryParse(SelectedDisplay, out var displayNum);
+
+        if (displayNum > 0 && Displays.All(item => item.DisplayNum != displayNum))
+        {
+            Displays.Add(new DisplayClass
+            {
+                DisplayNum = displayNum
+            });
+        }
+    }
+
+    private void RemoveDisplay()
     {
         int.TryParse(SelectedDisplay, out var display);
 
         if (Displays.Any(item => item.DisplayNum == display))
             Displays.Remove(Displays.First(item => item.DisplayNum == display));
     }
+    
+    private async void AddAnnouncement(Window window)
+    {
+        OpenFileDialog op = new OpenFileDialog();
+        op.Title = "Выбрать обьявление";
+        op.Filters!.Add(new FileDialogFilter { Name = "Изображения", Extensions = { "png","jpeg","jpg","webm","jfif" } });
+        op.AllowMultiple = true;
+        var result = await op.ShowAsync(window);
+        if (result != null)
+        {
+            foreach (var item in result)
+            {
+                FileInfo imageFileInfo = new FileInfo(item);
+                if (imageFileInfo.Exists)
+                {
+                    Announcements.Add(new AnnouncementClass
+                    {
+                        ImagePath = item,
+                        LastWriteTime = imageFileInfo.LastWriteTime
+                    });
+                }
+            }
+        }
+        OnPropertyChanged(nameof(AnnouncementCountContent));
+    }
+    private void RemoveAnnouncement()
+    {
+     
+        
+    }
+
+    public string AnnouncementCountContent => $"Обьявлений : {_announcements.Count}";
 
     private Object _selectedMode = 1;
 
@@ -136,14 +217,26 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    private string _settingsDirectoryContent;
+    private string _directory;
 
-    public string SettingsDirectoryContent
+    public string Directory
     {
-        get => _settingsDirectoryContent;
+        get => _directory;
         set
         {
-            _settingsDirectoryContent = value;
+            _directory = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string _launchPath;
+
+    public string LaunchPath
+    {
+        get => _launchPath;
+        set
+        {
+            _launchPath = value;
             OnPropertyChanged();
         }
     }
@@ -156,6 +249,18 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             _displays = value;
+            OnPropertyChanged();
+        }
+    }
+    
+    private ObservableCollection<AnnouncementClass> _announcements = new();
+
+    public ObservableCollection<AnnouncementClass> Announcements
+    {
+        get => _announcements;
+        set
+        {
+            _announcements = value;
             OnPropertyChanged();
         }
     }
@@ -184,35 +289,6 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    private void ModeChanged()
-    {
-        string? selectedModeContent = ((Label)_selectedMode).Content.ToString();
-        int.TryParse(selectedModeContent, out var mode);
-
-        if (mode == 1)
-        {
-            ModeHint = "Всплывашка";
-            IsFirstModeStackPanelVisible = true;
-            IsSecondModeStackPanelVisible = false;
-
-            Displays.Clear();
-            Displays.Add(new DisplayClass
-            {
-                DisplayNum = 1,
-                IsModeTwo = false
-            });
-        }
-        else if (mode == 2)
-        {
-            ModeHint = "Карусель";
-
-            IsFirstModeStackPanelVisible = false;
-            IsSecondModeStackPanelVisible = true;
-
-            Displays.Clear();
-        }
-    }
-
     private string _selectedDisplay;
 
     public string SelectedDisplay
@@ -234,7 +310,14 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     {
         public int DisplayNum { get; set; }
         public string? DirectoryPath { get; set; }
-        public int? Rate { get; set; }
+        public int? Rate { get; set; } = 60;
         public bool? IsModeTwo { get; set; }
+    }
+    
+    public class AnnouncementClass
+    {
+        public string ImagePath { get; set; }
+        public DateTime LastWriteTime { get; set; }
+        public DateTime? ActualUntil { get; set; } = DateTime.MaxValue;
     }
 }
