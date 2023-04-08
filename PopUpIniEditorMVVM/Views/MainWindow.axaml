@@ -7,7 +7,8 @@
         x:Class="PopUpIniEditorMVVM.Views.MainWindow"
         MinWidth="600" MinHeight="300"
         Icon="/Assets/avalonia-logo.ico"
-        Title="PopUpIniEditorMVVM">
+        Title="PopUpIniEditorMVVM"
+        Name="Window">
 
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
@@ -57,7 +58,13 @@
                                 </StackPanel>
                                 <StackPanel IsVisible="{Binding IsFirstModeStackPanelVisible}">
                                     <Label Content="Директория с файлами" />
-                                    <TextBox Text="{Binding SettingsDirectoryContent}" />
+                                    <Grid>
+                                        <TextBox Text="{Binding SettingsDirectoryContent}" />
+                                        <Button HorizontalAlignment="Right"
+                                                Content="🔍"
+                                                Command="{Binding DirectorySelectCommand}" 
+                                                CommandParameter="{Binding ElementName=Window}" />
+                                    </Grid>
                                 </StackPanel>
                                 <StackPanel IsVisible="{Binding IsSecondModeStackPanelVisible}">
                                     <StackPanel Orientation="Horizontal">

@@ -20,12 +20,14 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     public ReactiveCommand<Unit, Unit> AddDisplayCommand { get; }
     public ReactiveCommand<Unit, Unit> RemoveDisplayCommand { get; }
     public ReactiveCommand<Unit, Unit> UpdateSettingsIniFileCommand { get; }
+    public ReactiveCommand<Window, Unit> DirectorySelectCommand { get; }
 
     public MainWindowViewModel()
     {
         AddDisplayCommand = ReactiveCommand.Create(AddDisplay);
         RemoveDisplayCommand = ReactiveCommand.Create(RemoveDisplay);
         UpdateSettingsIniFileCommand = ReactiveCommand.Create(UpdateSettingsIniFile);
+        DirectorySelectCommand = ReactiveCommand.Create<Window>(DirectorySelect);
     }
 
     public void UpdateSettingsIniFile()
@@ -79,6 +81,14 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 DisplayNum = display
             });
         }
+    }
+    public async void DirectorySelect(Window window)
+    {
+        OpenFolderDialog ofd = new OpenFolderDialog();
+        ofd.Title = "Select folder";
+        var result = await ofd.ShowAsync(window);
+        if (result != null)
+            SettingsDirectoryContent = result;
     }
 
     public void RemoveDisplay()
