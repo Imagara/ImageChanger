@@ -11,9 +11,8 @@ namespace PopUpWindow
 {
     public partial class MainWindow : Window
     {
-        private readonly List<string> _imagesPaths = new();
+        private List<string> _imagesPaths = new();
         private readonly int _screenNum = 1;
-
         private readonly Settings _settings = new();
         private readonly Logger _logger = new();
 
@@ -24,14 +23,19 @@ namespace PopUpWindow
         public MainWindow(int screenNum, List<string> imagesPaths, bool autoDel = true)
         {
             InitializeComponent();
+
+            _screenNum = screenNum;
+            _imagesPaths = imagesPaths;
+            _autoDel = autoDel;
+
+            Title = $"Screen #{screenNum}";
+
             try
             {
-                _screenNum = screenNum;
-                _imagesPaths = imagesPaths;
-                _autoDel = autoDel;
-                Title = $"Screen #{screenNum}";
                 if (MainSettings.Mode == 1)
-                    MainImage.Source = new Bitmap(MainSettings.Directory + MainSettings.Slash + imagesPaths.First());
+                {
+                    MainImage.Source = new Bitmap(Path.Combine(MainSettings.Directory, _imagesPaths.First()));
+                }
                 else
                     Close();
             }
@@ -51,27 +55,32 @@ namespace PopUpWindow
                 //Import window settings
                 try
                 {
-                    FileManager manager = new FileManager(MainSettings.IniPath);
-                    _settings.Rate = Byte.TryParse(manager.GetPrivateString($"display{_screenNum}", "rate"), out var temp)
-                        ? temp
-                        : _settings.Rate;
-                    _settings.DirectoryPath =
-                        manager.GetPrivateString($"display{_screenNum}", "directory").Trim() != string.Empty
-                            ? manager.GetPrivateString($"display{_screenNum}", "directory")
-                            : _settings.DirectoryPath;
-                    HelpGrid.IsVisible =
-                        bool.TryParse(
-                            new FileManager(Environment.CurrentDirectory).GetPrivateString("main", "leftpanel"),
-                            out var isVisible)
-                            ? isVisible
-                            : false;
-                    
+                    var manager = new FileManager(MainSettings.IniPath);
+
+                    if (byte.TryParse(manager.GetPrivateString($"display{_screenNum}", "rate"), out var temp))
+                    {
+                        _settings.Rate = temp;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(manager.GetPrivateString($"display{_screenNum}", "directory")
+                            .Trim()) == false)
+                    {
+                        _settings.DirectoryPath = manager.GetPrivateString($"display{_screenNum}", "directory");
+                    }
+
+                    if (bool.TryParse(manager.GetPrivateString("main", "leftpanel"),
+                            out var isVisible))
+                    {
+                        HelpGrid.IsVisible = isVisible;
+                    }
+
                     _logger.CreateLog($"{_screenNum} display: settings successfully imported");
                 }
                 catch (Exception ex)
                 {
-                    _logger.CreateLog($"{_screenNum} display: import settings error: " + ex.Message);
+                    _logger.CreateLog($"{_screenNum} display: import settings error: {ex.Message}");
                 }
+
                 SecondModeCycle();
             }
             else
@@ -95,13 +104,20 @@ namespace PopUpWindow
 
         private void GetAllPictures()
         {
-            _imagesPaths.Clear();
-
-            foreach (string file in Directory
-                         .EnumerateFiles(_settings.DirectoryPath, "*.*", SearchOption.TopDirectoryOnly)
-                         .Where(item => MainSettings.Extensions.Any(ext => '.' + ext == Path.GetExtension(item))))
+            try
             {
-                _imagesPaths.Add(file);
+                _imagesPaths.Clear();
+
+                _imagesPaths.AddRange(Directory
+                    .EnumerateFiles(_settings.DirectoryPath, "*.*", SearchOption.TopDirectoryOnly)
+                    .Where(filePath => MainSettings.Extensions.Any(ext => ext.Equals(Path.GetExtension(filePath)))));
+
+                _logger.CreateLog(
+                    $"{_screenNum} display: got {_imagesPaths.Count} files from {_settings.DirectoryPath}");
+            }
+            catch (Exception ex)
+            {
+                _logger.CreateLog($"{_screenNum} display: error: {ex.Message}");
             }
         }
 
@@ -109,21 +125,38 @@ namespace PopUpWindow
         {
             if (e.Key == Key.Escape && MainSettings.Mode == 1)
             {
-                FileInfo file = new FileInfo(MainSettings.Directory + MainSettings.Slash + _imagesPaths.First());
-                string historyPath = Environment.CurrentDirectory + MainSettings.Slash + "history.hy";
-
-                new FileManager(historyPath).WriteHistoryString(file.Name, file.LastWriteTime);
-                if (_autoDel && file.Exists)
-                    file.Delete();
-                _imagesPaths.Remove(_imagesPaths.First());
-                if (_imagesPaths.Count <= 0)
+                var file = new FileInfo(Path.Combine(MainSettings.Directory, _imagesPaths.First()));
+                var historyPath = Path.Combine(Environment.CurrentDirectory, "history.hy");
+                var fileManager = new FileManager(historyPath);
+                try
                 {
-                    foreach (Window window in MainSettings.Windows)
-                        window.Close();
-                    MainSettings.Windows.Clear();
+                    fileManager.WriteHistoryString(file.Name, file.LastWriteTime);
+
+                    if (_autoDel && file.Exists)
+                    {
+                        file.Delete();
+                    }
+
+                    _imagesPaths.Remove(_imagesPaths.First());
+
+                    if (_imagesPaths.Count <= 0)
+                    {
+                        foreach (var window in MainSettings.Windows.ToList())
+                        {
+                            window.Close();
+                            MainSettings.Windows.Remove(window);
+                        }
+                    }
+                    else
+                    {
+                        MainImage.Source =
+                            new Bitmap(Path.Combine(MainSettings.Directory, _imagesPaths.First()));
+                    }
                 }
-                else
-                    MainImage.Source = new Bitmap(MainSettings.Directory + MainSettings.Slash + _imagesPaths.First());
+                catch (Exception ex)
+                {
+                    _logger.CreateLog($"{_screenNum} display: error: {ex.Message}");
+                }
             }
         }
     }

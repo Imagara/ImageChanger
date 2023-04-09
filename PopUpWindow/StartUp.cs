@@ -1,6 +1,7 @@
 ﻿using Avalonia.Controls;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,24 +10,25 @@ using Avalonia;
 
 namespace PopUpWindow
 {
+    // Define StartUp class which derives from Window
     public class StartUp : Window
     {
         private DateTime _targetTime;
         private readonly Logger _logger = new();
 
+        // Constructor
         public StartUp()
         {
-            //Defines a slash for a specific operating system
-            SlashDefinition();
-
             //Import main(general) settings
             ImportMainSettings();
 
             //Create history.hy if not exists
             try
             {
-                string historyPath = Environment.CurrentDirectory + MainSettings.Slash + "history.hy";
+                string historyPath = Path.Combine(Environment.CurrentDirectory, "history.hy");
                 FileInfo historyFile = new FileInfo(historyPath);
+                
+                // Create file if it does not already exist
                 if (!historyFile.Exists)
                 {
                     historyFile.Create();
@@ -41,32 +43,24 @@ namespace PopUpWindow
             }
 
 
-            //Screens definition
+            // Set list of available screens
             MainSettings.AllScreens = Screens.All;
-            
-            
+
+
             int mode = MainSettings.Mode;
             _logger.CreateLog($"{mode} mode selected");
+
             if (mode == 1)
-            {
                 StartUpWaiter(MainSettings.IniReaderRefreshRate);
-            }
             else if (mode == 2)
                 OpenWindows();
         }
 
-        private void SlashDefinition()
-        {
-            if (Environment.OSVersion.ToString().Substring(0, 9) == "Microsoft")
-                MainSettings.Slash = '\\';
-            else if (Environment.OSVersion.ToString().Substring(0, 4) == "Unix")
-                MainSettings.Slash = '/';
-        }
-
+        //Method for continuously checking for a delayed start time
         async void StartUpWaiter(int updateRate = 60)
         {
-            string launchPath = MainSettings.Directory + MainSettings.Slash + "launch.ini";
-
+            string launchPath = Path.Combine(MainSettings.Directory, "launch.ini");
+            
             int seconds = updateRate;
             while (true)
             {
@@ -78,20 +72,23 @@ namespace PopUpWindow
 
                         string dateTimeStr = manager.GetPrivateString("time");
 
-                        Regex timeFormat = new Regex(@"^([0-1][0-9]|[2][1-3]):[0-5][0-9]");
-
-                        DateTime targetTime = new();
-                        if (timeFormat.IsMatch(dateTimeStr))
-                            targetTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
-                                Int32.Parse(dateTimeStr.Substring(0, dateTimeStr.IndexOf(':'))),
-                                Int32.Parse(dateTimeStr.Substring(dateTimeStr.IndexOf(':') + 1,
-                                    dateTimeStr.Length - dateTimeStr.IndexOf(":", StringComparison.Ordinal) - 1)), 0);
-                        else if (DateTime.TryParse(dateTimeStr, out DateTime tempdt))
+                        DateTime targetTime;
+                        
+                        if (DateTime.TryParseExact(dateTimeStr, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTime) == false)
+                        {
+                            _logger.CreateLog("Invalid time format. Expected format: '{HH:mm}'");
+                            return;
+                        }
+                        
+                        if (DateTime.TryParse(dateTimeStr, out DateTime tempdt))
                             targetTime = tempdt;
+                        
                         if (targetTime.Equals(DateTime.MinValue))
                             continue;
+                        
                         if (_targetTime != targetTime)
                             _logger.CreateLog($"StartUpWaiter: Next Start: {targetTime}");
+                        
                         _targetTime = targetTime;
                     }
                 }
@@ -100,34 +97,30 @@ namespace PopUpWindow
                     _logger.CreateLog($"StartUpWaiter: Error while reading date");
                 }
                 
+                // If the current time exceeds the target time, open windows
                 if (DateTime.Now > _targetTime)
                 {
                     try
                     {
-                        List<string> imagesPaths = new();
-                        var dir = new DirectoryInfo(MainSettings.Directory);
-                        FileInfo[] files = dir.GetFiles();
-
-                        foreach (FileInfo file in files
-                                     .Where(item => MainSettings.Extensions.Any(ext => '.' + ext == item.Extension))
-                                     .OrderBy(ord => ord.LastWriteTime))
-                        {
-                            string historyPath = Environment.CurrentDirectory + MainSettings.Slash + "history.hy";
-                            FileManager manager = new(historyPath);
-                            if (!manager.IsHistoryContains(file.Name, file.LastWriteTime))
-                                imagesPaths.Add(file.Name);
-                        }
-
+                        List<string> imagesPaths = GetImages();
+                        
+                        // If there are images to show, open windows
                         if (imagesPaths.Count > 0)
                         {
                             FileManager manager = new FileManager(launchPath);
+                            
+                            bool autoDel = true;
+                            if (bool.TryParse(manager.GetPrivateString("autodelete"), out var temp))
+                            {
+                                autoDel = temp;
+                            }
 
-                            bool autoDel = bool.TryParse(manager.GetPrivateString("autodelete"), out var temp)
-                                ? temp
-                                : true;
+
                             if (MainSettings.Windows.Count == 0)
+                            {
                                 OpenWindows(imagesPaths, autoDel);
-                            _logger.CreateLog($"StartUpWaiter: Windows opened");
+                                _logger.CreateLog($"StartUpWaiter: Windows opened");
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -139,6 +132,25 @@ namespace PopUpWindow
                 await Task.Delay(seconds * 1000);
             }
         }
+        
+        private List<string> GetImages()
+        {
+            List<string> imagesPaths = new();
+            var dir = new DirectoryInfo(MainSettings.Directory);
+            FileInfo[] files = dir.GetFiles();
+
+            foreach (FileInfo file in files
+                         .Where(item => MainSettings.Extensions.Any(ext => '.' + ext == item.Extension))
+                         .OrderBy(ord => ord.LastWriteTime))
+            {
+                string historyPath = Path.Combine(Environment.CurrentDirectory, "history.hy");
+                FileManager manager = new(historyPath);
+                if (!manager.IsHistoryContains(file.Name, file.LastWriteTime))
+                    imagesPaths.Add(file.Name);
+            }
+            return imagesPaths;
+        }
+
 
         private void ImportMainSettings()
         {

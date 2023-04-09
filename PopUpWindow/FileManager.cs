@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Globalization;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace PopUpWindow
@@ -13,54 +12,51 @@ namespace PopUpWindow
         private readonly string _path; //Для хранения пути к INI-файлу
         private readonly Logger _logger = new();
 
+        private static readonly Regex IniSectionLineMatcher = new Regex(
+            @"^([A-Za-z]+=[0-9]+)|([A-Za-z]+=[A-Za-z]+)|([A-Za-z]+=([0-1][0-9]|[2][1-3])[:./\s-][0-5][0-9])|([[0-9A-Za-z]+])",
+            RegexOptions.Compiled);
+
+        private static readonly Regex IniLineMatcher = new Regex(
+            @"^([A-Za-z]+=[0-9]+)|([A-Za-z]+=[A-Za-z]+)|([A-Za-z]+=([0-1][0-9]|[2][1-3])[:./\s-][0-5][0-9])",
+            RegexOptions.Compiled);
+
         //Конструктор, принимающий путь к INI-файлу
         public FileManager(string aPath)
         {
             _path = aPath;
         }
 
-        public string GetPrivateString(string aKey)
+        public string GetPrivateString(string key)
         {
             string result = "";
 
-            Regex regex = new Regex(
-                @"^([A-Za-z]+=[0-9]+)|([A-Za-z]+=[A-Za-z]+)|([A-Za-z]+=([0-1][0-9]|[2][1-3])[:./\s-][0-5][0-9])",
-                RegexOptions.Compiled);
-
             try
             {
-                FileInfo ini = new(_path);
-                if (ini.Exists)
+                IEnumerable<string> iniLines = File.ReadLines(_path);
+
+                foreach (var line in iniLines)
                 {
-                    StreamReader sr = new(_path);
-                    while (!sr.EndOfStream)
+                    var trimmedLine = line.Replace("  ", " ").Trim();
+
+                    if (trimmedLine.StartsWith("#") || !IniLineMatcher.IsMatch(trimmedLine))
+                        continue;
+
+                    var equalsIndex = trimmedLine.IndexOf("=", StringComparison.Ordinal);
+
+                    if (equalsIndex != -1)
                     {
-                        string str = sr.ReadLine()!.Replace("  ", " ").Trim();
-
-                        if (str.StartsWith("#") ||
-                            !regex.IsMatch(str) ||
-                            str.IndexOf("[", StringComparison.Ordinal) != -1)
-                            continue;
-
-                        if (str.IndexOf("=", StringComparison.Ordinal) != -1)
+                        var currentKey = trimmedLine.Substring(0, equalsIndex);
+                        if (currentKey == key)
                         {
-                            string key = str.Substring(0, str.IndexOf("=", StringComparison.Ordinal));
-
-                            if (key == aKey)
-                            {
-                                result = str.Substring(str.IndexOf("=", StringComparison.Ordinal) + 1,
-                                    str.Length - str.IndexOf("=", StringComparison.Ordinal) - 1);
-                                break;
-                            }
+                            result = trimmedLine.Substring(equalsIndex + 1);
+                            break;
                         }
                     }
-
-                    sr.Close();
                 }
             }
             catch (Exception ex)
             {
-                _logger.CreateLog($"Error while reading ini file (key = {aKey}): " + ex.Message);
+                _logger.CreateLog($"Error while reading ini file (key = {key}): " + ex.Message);
                 return "";
             }
 
@@ -68,58 +64,54 @@ namespace PopUpWindow
         }
 
         //Возвращает значение из INI-файла (по указанным секции и ключу) 
-        public string GetPrivateString(string aSection, string aKey)
+        public string GetPrivateString(string section, string key)
         {
             string result = "";
-            Regex regex = new Regex(
-                @"^([A-Za-z]+=[0-9]+)|([A-Za-z]+=[A-Za-z]+)|([A-Za-z]+=([0-1][0-9]|[2][1-3])[:./\s-][0-5][0-9])|([[0-9A-Za-z]+])",
-                RegexOptions.Compiled);
+
             try
             {
-                FileInfo ini = new(_path);
-                if (ini.Exists)
+                IEnumerable<string> iniLines = File.ReadLines(_path);
+
+                bool isInDesiredSection = false;
+
+                foreach (var line in iniLines)
                 {
-                    StreamReader sr = new(_path);
+                    var trimmedLine = line.Replace("  ", " ").Trim();
 
-                    bool isDesiredSection = false;
+                    if (trimmedLine.StartsWith("#") || !IniSectionLineMatcher.IsMatch(trimmedLine))
+                        continue;
 
-                    while (!sr.EndOfStream)
+                    if (trimmedLine == $"[{section}]")
                     {
-                        string str = sr.ReadLine()!.Replace("  ", " ").Trim();
-
-                        if (str.StartsWith("#") ||
-                            !regex.IsMatch(str))
-                            continue;
-
-                        if (str == $"[{aSection}]")
-                        {
-                            isDesiredSection = true;
-                            continue;
-                        }
-
-                        if (str.IndexOf("[", StringComparison.Ordinal) != -1 && isDesiredSection)
-                            break;
-                        if (str.IndexOf("[", StringComparison.Ordinal) != -1)
-                            isDesiredSection = false;
-
-                        if (isDesiredSection && str.IndexOf("=", StringComparison.Ordinal) != -1)
-                        {
-                            string key = str.Substring(0, str.IndexOf("=", StringComparison.Ordinal));
-                            if (key == aKey)
-                            {
-                                result = str.Substring(str.IndexOf("=", StringComparison.Ordinal) + 1,
-                                    str.Length - str.IndexOf("=", StringComparison.Ordinal) - 1);
-                                break;
-                            }
-                        }
+                        isInDesiredSection = true;
+                        continue;
                     }
 
-                    sr.Close();
+                    if (isInDesiredSection && trimmedLine.StartsWith("["))
+                        break;
+
+                    if (trimmedLine.StartsWith("["))
+                    {
+                        isInDesiredSection = false;
+                        continue;
+                    }
+
+                    var equalsIndex = trimmedLine.IndexOf("=", StringComparison.Ordinal);
+
+                    if (equalsIndex != -1 && isInDesiredSection)
+                    {
+                        var currentKey = trimmedLine.Substring(0, equalsIndex);
+                        if (currentKey == key)
+                        {
+                            result = trimmedLine.Substring(equalsIndex + 1);
+                            break;
+                        }
+                    }
                 }
             }
             catch (Exception ex)
             {
-                _logger.CreateLog($"Error while reading ini file (section = {aSection}, key = {aKey}): " + ex.Message);
+                _logger.CreateLog($"Error while reading ini file (section = {section}, key = {key}): " + ex.Message);
                 return "";
             }
 
@@ -141,23 +133,24 @@ namespace PopUpWindow
                 return false;
             }
         }
-
-        public void WriteHistoryString(string aFileName, DateTime aCreationTime)
+        public void WriteHistoryString(string fileName, DateTime creationTime)
         {
             try
             {
-                FileInfo historyFile = new FileInfo(_path);
-                if (historyFile.Exists)
+                FileInfo fileInfo = new FileInfo(_path);
+                if (fileInfo.Exists)
                 {
-                    StreamWriter sw = new StreamWriter(_path, true);
-                    sw.WriteLine(aFileName + "|" + aCreationTime);
-                    sw.Close();
+                    using(StreamWriter writer = new StreamWriter(_path, true))
+                    {
+                        writer.WriteLine($"{fileName}|{creationTime}");
+                    }
                 }
             }
             catch (Exception ex)
             {
-                _logger.CreateLog($"Error while writing file({_path}): " + ex.Message);
+                _logger.CreateLog($"Error while writing file({_path}): {ex.Message}");
             }
         }
+
     }
 }
