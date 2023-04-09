@@ -44,26 +44,28 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         int.TryParse(selectedModeContent, out var mode);
         if (mode is 1 or 2)
         {
-            List<string> args = new();
-            args.Add("[main]\n" +
-                     $"mode={mode}");
+            List<string> strs = new()
+            {
+                "[main]\n" +
+                $"mode={mode}"
+            };
             if (mode is 1)
             {
-                args.Add($"directory={_directory}");
+                strs.Add($"directory={_directory}");
             }
             else
             {
                 var screens = _displays.Select(item => item.DisplayNum).ToList();
-                args.Add($"screens={string.Join("/", screens)}");
+                strs.Add($"screens={string.Join("/", screens)}");
                 foreach (var display in _displays)
                 {
-                    args.Add($"[display{display.DisplayNum}]\n" +
+                    strs.Add($"[display{display.DisplayNum}]\n" +
                              $"directory={display.DirectoryPath}\n" +
                              $"rate={display.Rate}\n");
                 }
             }
 
-            File.WriteAllLines("settings.ini", args);
+            File.WriteAllLines("settings.ini", strs);
 
             //need to test
             Process PrFolder = new Process();
@@ -130,16 +132,18 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     private void ImportAnnouncements(string path)
     {
         FileInfo iniFile = new FileInfo(path);
+        
+        Regex announcementRegex = new Regex(
+            @"^[A-Za-z0-9.:\\/]{4,128}[|][0-9.:\s]{10,19}[|][0-9.:]{10,19}[|][0-9.:]{10,19}",
+            RegexOptions.Compiled);
+        
         if (iniFile.Exists && iniFile.Extension == ".ini")
         {
             var announcementsStrs = File.ReadLines(iniFile.FullName);
             _announcements.Clear();
             foreach (var item in announcementsStrs)
             {
-                Regex regex = new Regex(
-                    @"^[A-Za-z0-9.:\\/]{4,128}[|][0-9.:\s]{10,19}[|][0-9.:]{10,19}[|][0-9.:]{10,19}",
-                    RegexOptions.Compiled);
-                if (regex.IsMatch(item))
+                if (announcementRegex.IsMatch(item))
                 {
                     string[] subs = item.Split('|');
                     new InfoWindow(string.Join("\n", subs)).Show();
