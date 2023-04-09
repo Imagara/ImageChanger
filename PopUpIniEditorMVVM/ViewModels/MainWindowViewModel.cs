@@ -7,7 +7,9 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using Avalonia.Controls;
+using PopUpIniEditorMVVM.Views;
 using ReactiveUI;
 
 namespace PopUpIniEditorMVVM.ViewModels;
@@ -59,7 +61,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                              $"directory={display.DirectoryPath}\n" +
                              $"rate={display.Rate}\n");
                 }
-            } 
+            }
 
             File.WriteAllLines("settings.ini", args);
 
@@ -75,7 +77,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             PrFolder.Start();
         }
     }
-    
+
     private void ModeChanged()
     {
         string? selectedModeContent = ((Label)_selectedMode).Content.ToString();
@@ -104,6 +106,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             Displays.Clear();
         }
     }
+
     private async void DirectorySelect(Window window)
     {
         OpenFolderDialog ofd = new OpenFolderDialog();
@@ -121,12 +124,54 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         op.AllowMultiple = false;
         var result = await op.ShowAsync(window);
         if (result != null)
-        {
-            FileInfo iniFile = new FileInfo(result.First());
-            if (iniFile.Exists && iniFile.Extension == ".ini")
-                LaunchPath = iniFile.FullName;
-        }
+            LaunchPath = result.First();
     }
+
+    private void ImportAnnouncements(string path)
+    {
+        FileInfo iniFile = new FileInfo(path);
+        if (iniFile.Exists && iniFile.Extension == ".ini")
+        {
+            var announcementsStrs = File.ReadLines(iniFile.FullName);
+            _announcements.Clear();
+            foreach (var item in announcementsStrs)
+            {
+                Regex regex = new Regex(
+                    @"^[A-Za-z0-9.:\\/]{4,128}[|][0-9.:\s]{10,19}[|][0-9.:]{10,19}[|][0-9.:]{10,19}",
+                    RegexOptions.Compiled);
+                if (regex.IsMatch(item))
+                {
+                    string[] subs = item.Split('|');
+                    new InfoWindow(string.Join("\n", subs)).Show();
+                    DateTime lastWriteTime;
+                    DateTime actualStart;
+                    DateTime actualEnd;
+
+                    if (!DateTime.TryParse(subs[1], out lastWriteTime)
+                        || !DateTime.TryParse(subs[2], out actualStart)
+                        || !DateTime.TryParse(subs[3], out actualEnd))
+                        continue;
+
+                    // need to test
+                    if (subs[0].IndexOf(':') == -1)
+                        subs[0] = _launchPath + subs[0];
+
+                    _announcements.Add(new AnnouncementClass
+                    {
+                        ImagePath = subs[0],
+                        LastWriteTime = lastWriteTime,
+                        ActualStart = actualStart,
+                        ActualEnd = actualEnd
+                    });
+                }
+            }
+
+            OnPropertyChanged(nameof(AnnouncementCountContent));
+        }
+        else if (iniFile.Extension == ".ini")
+            LaunchPath = iniFile.FullName;
+    }
+
     private void AddDisplay()
     {
         int.TryParse(SelectedDisplay, out var displayNum);
@@ -147,12 +192,13 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         if (Displays.Any(item => item.DisplayNum == display))
             Displays.Remove(Displays.First(item => item.DisplayNum == display));
     }
-    
+
     private async void AddAnnouncement(Window window)
     {
         OpenFileDialog op = new OpenFileDialog();
         op.Title = "Выбрать обьявление";
-        op.Filters!.Add(new FileDialogFilter { Name = "Изображения", Extensions = { "png","jpeg","jpg","webm","jfif" } });
+        op.Filters!.Add(new FileDialogFilter
+            { Name = "Изображения", Extensions = { "png", "jpeg", "jpg" } });
         op.AllowMultiple = true;
         var result = await op.ShowAsync(window);
         if (result != null)
@@ -170,12 +216,12 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 }
             }
         }
+
         OnPropertyChanged(nameof(AnnouncementCountContent));
     }
+
     private void RemoveAnnouncement()
     {
-     
-        
     }
 
     public string AnnouncementCountContent => $"Обьявлений : {_announcements.Count}";
@@ -237,6 +283,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             _launchPath = value;
+            ImportAnnouncements(_launchPath);
             OnPropertyChanged();
         }
     }
@@ -252,7 +299,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
-    
+
     private ObservableCollection<AnnouncementClass> _announcements = new();
 
     public ObservableCollection<AnnouncementClass> Announcements
@@ -313,11 +360,12 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         public int? Rate { get; set; } = 60;
         public bool? IsModeTwo { get; set; }
     }
-    
+
     public class AnnouncementClass
     {
         public string ImagePath { get; set; }
         public DateTime LastWriteTime { get; set; }
-        public DateTime? ActualUntil { get; set; } = DateTime.MaxValue;
+        public DateTime? ActualStart { get; set; } = DateTime.Now;
+        public DateTime? ActualEnd { get; set; } = DateTime.MaxValue;
     }
 }

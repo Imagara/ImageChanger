@@ -10,9 +10,9 @@
         Icon="/Assets/avalonia-logo.ico"
         Title="PopUpIniEditorMVVM"
         Name="Window">
-<Window.Resources>
-    <local:PathToBitmapConverter x:Key="pathToBitmapConverter"/>
-</Window.Resources>
+    <Window.Resources>
+        <local:PathToBitmapConverter x:Key="pathToBitmapConverter" />
+    </Window.Resources>
     <Design.DataContext>
         <vm:MainWindowViewModel />
     </Design.DataContext>
@@ -187,90 +187,100 @@
         </TabItem>
         <TabItem>
             <TabItem.Header>launch</TabItem.Header>
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <StackPanel>
-                    <Label Content="Launch файл"
-                           Margin="0,3,0,0" />
-                    <Grid>
-                        <TextBox Text="{Binding LaunchPath}" />
-                        <Button HorizontalAlignment="Right"
-                                Content="🔍"
-                                Command="{Binding LaunchSelectCommand}"
-                                CommandParameter="{Binding ElementName=Window}"/>
-                    </Grid>
-                    <StackPanel Orientation="Horizontal">
-                        <Label Content="{Binding AnnouncementCountContent}" />
-                        <Button Content="+"
-                                Width="30"
-                                Height="30"
-                                HorizontalContentAlignment="Center"
-                                VerticalContentAlignment="Center"
-                                Command="{Binding AddAnnouncementCommand}"
-                                CommandParameter="{Binding ElementName=Window}" >
-                            <ToolTip.Tip>
-                                <TextBlock>Добавление объявления</TextBlock>
-                            </ToolTip.Tip>
-                        </Button>
-                        <Button Content="⌫"
-                                Width="40" Height="30"
-                                HorizontalContentAlignment="Center"
-                                VerticalContentAlignment="Center"
-                                Command="{Binding RemoveAnnouncementCommand}">
-                            <ToolTip.Tip>
-                                <TextBlock>Удаляет выбранное обьявление из списка</TextBlock>
-                            </ToolTip.Tip>
-                        </Button>
-                    </StackPanel>
-
-                    <ScrollViewer HorizontalScrollBarVisibility="Visible">
-                        <ListBox Items="{Binding Announcements}"
-                                 Background="transparent">
-                            <ListBox.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" />
-                                </ItemsPanelTemplate>
-                            </ListBox.ItemsPanel>
+            <ScrollViewer VerticalScrollBarVisibility="Visible">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel>
+                        <Label Content="Launch файл"
+                               Margin="0,3,0,0" />
+                        <Grid>
+                            <TextBox Text="{Binding LaunchPath}" />
+                            <Button HorizontalAlignment="Right"
+                                    Content="🔍"
+                                    Command="{Binding LaunchSelectCommand}"
+                                    CommandParameter="{Binding ElementName=Window}" />
+                        </Grid>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="{Binding AnnouncementCountContent}" />
+                            <Button Content="+"
+                                    Width="30"
+                                    Height="30"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    Command="{Binding AddAnnouncementCommand}"
+                                    CommandParameter="{Binding ElementName=Window}">
+                                <ToolTip.Tip>
+                                    <TextBlock>Добавление объявления</TextBlock>
+                                </ToolTip.Tip>
+                            </Button>
+                            <Button Content="⌫"
+                                    Width="40" Height="30"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    Command="{Binding RemoveAnnouncementCommand}">
+                                <ToolTip.Tip>
+                                    <TextBlock>Удаляет выбранное обьявление из списка</TextBlock>
+                                </ToolTip.Tip>
+                            </Button>
+                        </StackPanel>
+                        <ListBox Background="transparent"
+                                 Items="{Binding Path=Announcements}">
+                            <ListBox.Template>
+                                <ControlTemplate>
+                                    <ItemsPresenter />
+                                </ControlTemplate>
+                            </ListBox.Template>
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <Border BorderBrush="black"
-                                            BorderThickness="1"
-                                            CornerRadius="15"
-                                            Height="200"
-                                            Width="340"
-                                            Background="#ebebe8">
-                                        <StackPanel>
-                                            <Image Source="{Binding ImagePath, Converter={StaticResource pathToBitmapConverter}}"
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="350" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Margin="5,0,5,0"
+                                                Background="#ebebe8"
+                                                BorderBrush="black"
+                                                BorderThickness="1"
+                                                CornerRadius="15">
+                                            <Image Margin="5"
+                                                   Source="{Binding ImagePath, Converter={StaticResource pathToBitmapConverter}}"
                                                    Stretch="Uniform"
-                                                   Margin="5"
-                                                   Height="155"
-                                                   ClipToBounds="True" />
-                                            <StackPanel Orientation="Horizontal"
-                                                        HorizontalAlignment="Center">
-                                                <Label Content="Актуально до:"></Label>
-                                                <TextBox Text="{Binding ActualUntil}" 
-                                                         Margin="0,-2,0,0" />
+                                                   ClipToBounds="True">
+                                            </Image>
+                                        </Border>
+                                        <Border Grid.Column="1"
+                                                BorderBrush="black"
+                                                BorderThickness="1"
+                                                CornerRadius="15"
+                                                Height="200"
+                                                Margin="5,0,5,0"
+                                                Background="#ebebe8">
+                                            <StackPanel Margin="10">
+                                                <Label Content="Актуально с" />
+                                                <TextBox Text="{Binding ActualStart}" />
+                                                <Label Content="Актуально до" />
+                                                <TextBox Text="{Binding ActualEnd}" />
                                             </StackPanel>
-                                        </StackPanel>
-                                    </Border>
+                                        </Border>
+                                    </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
-                    </ScrollViewer>
-                </StackPanel>
-                <Button Grid.Row="1"
-                        Width="120"
-                        Height="40"
-                        Content="Сохранить"
-                        VerticalAlignment="Bottom"
-                        HorizontalAlignment="Center"
-                        VerticalContentAlignment="Center"
-                        HorizontalContentAlignment="Center">
-                </Button>
-            </Grid>
+                    </StackPanel>
+                    <Button Grid.Row="1"
+                            Width="120"
+                            Height="40"
+                            Content="Сохранить"
+                            VerticalAlignment="Bottom"
+                            HorizontalAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            HorizontalContentAlignment="Center">
+                    </Button>
+                </Grid>
+            </ScrollViewer>
         </TabItem>
     </TabControl>
 </Window>
