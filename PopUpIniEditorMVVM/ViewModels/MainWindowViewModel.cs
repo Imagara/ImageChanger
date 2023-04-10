@@ -16,17 +16,19 @@ namespace PopUpIniEditorMVVM.ViewModels;
 
 public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {
+    // Event to signal ViewModel property changes to the View and update the UI display
     public event PropertyChangedEventHandler PropertyChanged;
-    private const char Slash = '/';
 
     public ReactiveCommand<Unit, Unit> AddDisplayCommand { get; }
     public ReactiveCommand<Unit, Unit> RemoveDisplayCommand { get; }
     public ReactiveCommand<Window, Unit> AddAnnouncementCommand { get; }
     public ReactiveCommand<Unit, Unit> RemoveAnnouncementCommand { get; }
     public ReactiveCommand<Unit, Unit> UpdateSettingsIniFileCommand { get; }
+    public ReactiveCommand<Unit, Unit> UpdateLaunchIniFileCommand { get; }
     public ReactiveCommand<Window, Unit> DirectorySelectCommand { get; }
     public ReactiveCommand<Window, Unit> LaunchSelectCommand { get; }
 
+    // Constructor creating each user command and associated action
     public MainWindowViewModel()
     {
         AddDisplayCommand = ReactiveCommand.Create(AddDisplay);
@@ -34,14 +36,29 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         AddAnnouncementCommand = ReactiveCommand.Create<Window>(AddAnnouncement);
         RemoveAnnouncementCommand = ReactiveCommand.Create(RemoveAnnouncement);
         UpdateSettingsIniFileCommand = ReactiveCommand.Create(UpdateSettingsIniFile);
+        UpdateLaunchIniFileCommand = ReactiveCommand.Create(UpdateLaunchIniFile);
         DirectorySelectCommand = ReactiveCommand.Create<Window>(DirectorySelect);
         LaunchSelectCommand = ReactiveCommand.Create<Window>(LaunchSelect);
     }
 
+    private void UpdateLaunchIniFile()
+    {
+        string path = _launchPath;
+
+        List<string> strs = _announcements
+            .Select(item => $"{item.ImagePath}|{item.LastWriteTime}|{item.ActualStart}|{item.ActualEnd}").ToList();
+
+        File.WriteAllLines(path, strs);
+    }
+
+    // Method to write out changes made to settings.ini
     private void UpdateSettingsIniFile()
     {
-        string? selectedModeContent = ((Label)_selectedMode).Content.ToString();
-        int.TryParse(selectedModeContent, out var mode);
+        if (_selectedMode is not Label modeLabel)
+            return;
+
+        int.TryParse(modeLabel.Content.ToString(), out var mode);
+
         if (mode is 1 or 2)
         {
             List<string> strs = new()
@@ -65,12 +82,13 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 }
             }
 
+            // Write the updated settings.ini file
             File.WriteAllLines("settings.ini", strs);
 
             //need to test
             Process PrFolder = new Process();
             ProcessStartInfo psi = new ProcessStartInfo();
-            string file = Environment.CurrentDirectory + Slash + "settings.ini";
+            string file = Path.Combine(Environment.CurrentDirectory, "settings.ini");
             psi.CreateNoWindow = true;
             psi.WindowStyle = ProcessWindowStyle.Normal;
             psi.FileName = "explorer";
@@ -82,32 +100,27 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     private void ModeChanged()
     {
-        string? selectedModeContent = ((Label)_selectedMode).Content.ToString();
-        int.TryParse(selectedModeContent, out var mode);
+        if (_selectedMode is not Label label)
+            return;
 
-        if (mode == 1)
+        bool isFirstMode = label.Content.ToString() == "1";
+
+        ModeHint = isFirstMode ? "Всплывашка" : "Карусель";
+
+        IsFirstModeStackPanelVisible = isFirstMode;
+        IsSecondModeStackPanelVisible = !isFirstMode;
+
+        if (isFirstMode)
         {
-            ModeHint = "Всплывашка";
-            IsFirstModeStackPanelVisible = true;
-            IsSecondModeStackPanelVisible = false;
-
             Displays.Clear();
-            Displays.Add(new DisplayClass
-            {
-                DisplayNum = 1,
-                IsModeTwo = false
-            });
+            Displays.Add(new DisplayClass { DisplayNum = 1, IsModeTwo = false });
         }
-        else if (mode == 2)
+        else
         {
-            ModeHint = "Карусель";
-
-            IsFirstModeStackPanelVisible = false;
-            IsSecondModeStackPanelVisible = true;
-
             Displays.Clear();
         }
     }
+
 
     private async void DirectorySelect(Window window)
     {
@@ -121,9 +134,11 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     private async void LaunchSelect(Window window)
     {
         OpenFileDialog op = new OpenFileDialog();
+
         op.Title = "Выбрать конфигурационный файл";
         op.Filters!.Add(new FileDialogFilter() { Name = "Ini Files", Extensions = { "ini" } });
         op.AllowMultiple = false;
+
         var result = await op.ShowAsync(window);
         if (result != null)
             LaunchPath = result.First();
@@ -132,21 +147,21 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     private void ImportAnnouncements(string path)
     {
         FileInfo iniFile = new FileInfo(path);
-        
-        Regex announcementRegex = new Regex(
-            @"^[A-Za-z0-9.:\\/]{4,128}[|][0-9.:\s]{10,19}[|][0-9.:]{10,19}[|][0-9.:]{10,19}",
-            RegexOptions.Compiled);
-        
         if (iniFile.Exists && iniFile.Extension == ".ini")
         {
             var announcementsStrs = File.ReadLines(iniFile.FullName);
+            
             _announcements.Clear();
             foreach (var item in announcementsStrs)
             {
-                if (announcementRegex.IsMatch(item))
+                Regex regex = new Regex(
+                    @"^[A-Za-z0-9.:\\/-]{4,128}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}",
+                    RegexOptions.Compiled);
+
+                if (regex.IsMatch(item))
                 {
                     string[] subs = item.Split('|');
-                    new InfoWindow(string.Join("\n", subs)).Show();
+                    
                     DateTime lastWriteTime;
                     DateTime actualStart;
                     DateTime actualEnd;
@@ -155,14 +170,10 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                         || !DateTime.TryParse(subs[2], out actualStart)
                         || !DateTime.TryParse(subs[3], out actualEnd))
                         continue;
-
-                    // need to test
-                    if (subs[0].IndexOf(':') == -1)
-                        subs[0] = _launchPath + subs[0];
-
                     _announcements.Add(new AnnouncementClass
                     {
-                        ImagePath = subs[0],
+                        Name = subs[0],
+                        ImagePath = subs[0].IndexOf(':') == -1 ? _launchPath + subs[0] : subs[0],
                         LastWriteTime = lastWriteTime,
                         ActualStart = actualStart,
                         ActualEnd = actualEnd
@@ -200,10 +211,12 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     private async void AddAnnouncement(Window window)
     {
         OpenFileDialog op = new OpenFileDialog();
+
         op.Title = "Выбрать обьявление";
         op.Filters!.Add(new FileDialogFilter
             { Name = "Изображения", Extensions = { "png", "jpeg", "jpg" } });
         op.AllowMultiple = true;
+
         var result = await op.ShowAsync(window);
         if (result != null)
         {
@@ -214,6 +227,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 {
                     Announcements.Add(new AnnouncementClass
                     {
+                        Name = imageFileInfo.Name,
                         ImagePath = item,
                         LastWriteTime = imageFileInfo.LastWriteTime
                     });
@@ -367,6 +381,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     public class AnnouncementClass
     {
+        public string Name { get; set; }
         public string ImagePath { get; set; }
         public DateTime LastWriteTime { get; set; }
         public DateTime? ActualStart { get; set; } = DateTime.Now;

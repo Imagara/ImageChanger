@@ -259,6 +259,8 @@
                                                 Margin="5,0,5,0"
                                                 Background="#ebebe8">
                                             <StackPanel Margin="10">
+                                                <Label Content="Название файла" />
+                                                <TextBox Text="{Binding Name}" />
                                                 <Label Content="Актуально с" />
                                                 <TextBox Text="{Binding ActualStart}" />
                                                 <Label Content="Актуально до" />
@@ -277,7 +279,8 @@
                             VerticalAlignment="Bottom"
                             HorizontalAlignment="Center"
                             VerticalContentAlignment="Center"
-                            HorizontalContentAlignment="Center">
+                            HorizontalContentAlignment="Center"
+                            Command="{Binding UpdateLaunchIniFileCommand}">
                     </Button>
                 </Grid>
             </ScrollViewer>
