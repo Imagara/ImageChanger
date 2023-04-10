@@ -53,13 +53,17 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         string path = _launchPath;
 
         DateTime.TryParse(_launchDate, out var dt);
-        
-        List<string> strs = new()
-        {
-            $"time=" + dt.ToShortDateString() + " " + _launchTime + "\n"
-        };
+
+        List<string> strs = new();
+        if (dt != DateTime.MinValue)
+            strs.Add($"time=" + dt.ToShortDateString() + " " + _launchTime);
+        else
+            strs.Add($"time=" + _launchTime);
+
+        strs.Add($"autodelete={_launchAutoDeleteFile}\n");
+
         strs.AddRange(_announcements
-            .Select(item => $"{item.ImagePath}|{item.LastWriteTime}|{item.ActualStart}|{item.ActualEnd}").ToList());
+            .Select(item => $"{item.Name}|{item.LastWriteTime}|{item.ActualStart}|{item.ActualEnd}").ToList());
 
         File.WriteAllLines(path, strs);
     }
@@ -162,35 +166,51 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         FileInfo iniFile = new FileInfo(path);
         if (iniFile.Exists && iniFile.Extension == ".ini")
         {
-            var announcementsStrs = File.ReadLines(iniFile.FullName);
+            var announcementsStrs = File.ReadLines(iniFile.FullName).ToList();
 
             _announcements.Clear();
             foreach (var item in announcementsStrs)
             {
-                Regex regex = new Regex(
+                Regex announcementRegex = new Regex(
                     @"^[A-Za-z0-9.:\\/-]{4,128}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}",
                     RegexOptions.Compiled);
 
-                if (regex.IsMatch(item))
+                if (!announcementRegex.IsMatch(item))
+                    continue;
+
+                string[] subs = item.Split('|');
+
+                DateTime lastWriteTime;
+                DateTime actualStart;
+                DateTime actualEnd;
+
+                if (!DateTime.TryParse(subs[1], out lastWriteTime)
+                    || !DateTime.TryParse(subs[2], out actualStart)
+                    || !DateTime.TryParse(subs[3], out actualEnd))
+                    continue;
+
+                _announcements.Add(new AnnouncementClass
                 {
-                    string[] subs = item.Split('|');
+                    Name = subs[0],
+                    ImagePath = Path.Combine(iniFile.Directory.ToString(), subs[0]),
+                    LastWriteTime = lastWriteTime,
+                    ActualStart = actualStart,
+                    ActualEnd = actualEnd
+                });
 
-                    DateTime lastWriteTime;
-                    DateTime actualStart;
-                    DateTime actualEnd;
+                var timeLine = announcementsStrs.FirstOrDefault(s => s.StartsWith("time="));
+                if (timeLine != null)
+                {
+                    DateTime.TryParse(timeLine.Substring("time=".Length), out var dt);
+                    LaunchDate = dt.ToShortDateString();
+                    LaunchTime = dt.ToShortTimeString();
+                }
 
-                    if (!DateTime.TryParse(subs[1], out lastWriteTime)
-                        || !DateTime.TryParse(subs[2], out actualStart)
-                        || !DateTime.TryParse(subs[3], out actualEnd))
-                        continue;
-                    _announcements.Add(new AnnouncementClass
-                    {
-                        Name = subs[0],
-                        ImagePath = subs[0].IndexOf(':') == -1 ? _launchPath + subs[0] : subs[0],
-                        LastWriteTime = lastWriteTime,
-                        ActualStart = actualStart,
-                        ActualEnd = actualEnd
-                    });
+                var autoDeleteLine = announcementsStrs.FirstOrDefault(s => s.StartsWith("autodelete="));
+                if (autoDeleteLine != null)
+                {
+                    bool.TryParse(autoDeleteLine.Substring("autodelete=".Length), out var autoDeleteFiles);
+                    LaunchAutoDeleteFile = autoDeleteFiles;
                 }
             }
 
@@ -413,6 +433,18 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             _launchTime = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private bool _launchAutoDeleteFile;
+
+    public bool LaunchAutoDeleteFile
+    {
+        get => _launchAutoDeleteFile;
+        set
+        {
+            _launchAutoDeleteFile = value;
             OnPropertyChanged();
         }
     }

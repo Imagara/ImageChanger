@@ -89,11 +89,11 @@ namespace PopUpWindow
 
         private async void SecondModeCycle()
         {
-            GetAllPictures();
             while (true)
             {
+                GetAllPictures();
                 if (_imagesPaths.Count == 0)
-                    break;
+                    await Task.Delay(1800 * 1000);;
                 foreach (var item in _imagesPaths)
                 {
                     MainImage.Source = new Bitmap(item);
@@ -107,7 +107,7 @@ namespace PopUpWindow
             try
             {
                 _imagesPaths.Clear();
-
+                
                 _imagesPaths.AddRange(Directory
                     .EnumerateFiles(_settings.DirectoryPath, "*.*", SearchOption.TopDirectoryOnly)
                     .Where(filePath => MainSettings.Extensions.Any(ext => ext.Equals(Path.GetExtension(filePath)))));

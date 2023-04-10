@@ -64,7 +64,7 @@ namespace PopUpWindow
             int seconds = updateRate;
             while (true)
             {
-                await Task.Delay(seconds * 1000);
+               await Task.Delay(seconds * 1000);
                 try
                 {
                     if (new FileInfo(launchPath).Exists)
@@ -72,7 +72,7 @@ namespace PopUpWindow
                         FileManager manager = new FileManager(launchPath);
 
                         string dateTimeStr = manager.GetPrivateString("time");
-                        new InfoWindow($"|{dateTimeStr}|").Show();
+                        
                         DateTime targetTime;
                         
                         if (DateTime.TryParseExact(dateTimeStr, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTime) == false)
@@ -83,8 +83,8 @@ namespace PopUpWindow
                         if (DateTime.TryParse(dateTimeStr, out DateTime tempdt))
                             targetTime = tempdt;
                         
-                        if (targetTime.Equals(DateTime.MinValue))
-                            continue;
+                      if (targetTime.Equals(DateTime.MinValue))
+                          continue;
                         
                         if (_targetTime != targetTime)
                             _logger.CreateLog($"StartUpWaiter: Next Start: {targetTime}");
@@ -134,19 +134,57 @@ namespace PopUpWindow
         
         private List<string> GetImages()
         {
-            List<string> imagesPaths = new();
-            var dir = new DirectoryInfo(MainSettings.Directory);
-            FileInfo[] files = dir.GetFiles();
+            Regex regex = new Regex(
+                @"^[A-Za-z0-9.:\\/-]{4,128}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}",
+                RegexOptions.Compiled);
 
-            foreach (FileInfo file in files
-                         .Where(item => MainSettings.Extensions.Any(ext => '.' + ext == item.Extension))
-                         .OrderBy(ord => ord.LastWriteTime))
+            var allStrs = File.ReadAllLines(Path.Combine(MainSettings.Directory,"launch.ini"));
+
+            List<string> imagesPaths = new();
+            
+            foreach (var item in allStrs)
             {
-                string historyPath = Path.Combine(Environment.CurrentDirectory, "history.hy");
-                FileManager manager = new(historyPath);
-                if (!manager.IsHistoryContains(file.Name, file.LastWriteTime))
-                    imagesPaths.Add(file.Name);
+                if (!regex.IsMatch(item))
+                    continue;
+
+                string[] subs = item.Split('|');
+
+                DateTime lastWriteTime;
+                DateTime actualStart;
+                DateTime actualEnd;
+
+                if (!DateTime.TryParse(subs[1], out lastWriteTime)
+                    || !DateTime.TryParse(subs[2], out actualStart)
+                    || !DateTime.TryParse(subs[3], out actualEnd))
+                {
+                    _logger.CreateLog(
+                        $"error to parse str: {item}");
+                    continue;
+                }
+
+                if (actualStart > DateTime.Now)
+                    continue;
+
+                if (actualEnd < DateTime.Now)
+                    continue;
+
+
+                FileInfo file = new FileInfo(Path.Combine(MainSettings.Directory,subs[0]));
+
+                if (!file.Exists)
+                    continue;
+
+                if (MainSettings.Extensions.All(ext => '.' + ext != file.Extension))
+                    continue;
+
+                var historyPath = Path.Combine(Environment.CurrentDirectory, "history.hy");
+                FileManager historyManager = new(historyPath);
+
+                if (!historyManager.IsHistoryContains(subs[0], lastWriteTime))
+                    imagesPaths.Add(subs[0]);
             }
+            _logger.CreateLog(
+                $"got {imagesPaths.Count} files from {MainSettings.Directory}");
             return imagesPaths;
         }
 

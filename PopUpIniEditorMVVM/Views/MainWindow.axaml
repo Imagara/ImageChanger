@@ -241,7 +241,13 @@
                                             Margin="0,4,0,0"
                                             Command="{Binding ClearDateCommand}"/>
                                 </StackPanel>
+                                
                                 <TimePicker SelectedTime="{Binding LaunchTime}"/>
+                                
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Удалять после показа?"></Label>
+                                    <CheckBox IsChecked="{Binding LaunchAutoDeleteFile}"/>
+                                </StackPanel>
                                 
                                 <StackPanel Orientation="Horizontal">
                                     <Label Content="{Binding AnnouncementCountContent}" />
