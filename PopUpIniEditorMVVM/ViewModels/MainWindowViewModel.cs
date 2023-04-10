@@ -50,11 +50,10 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     private void UpdateLaunchIniFile()
     {
-        string path = _launchPath;
-
-        DateTime.TryParse(_launchDate, out var dt);
+        DateTime.TryParse(_launchDateStr, out var dt);
 
         List<string> strs = new();
+
         if (dt != DateTime.MinValue)
             strs.Add($"time=" + dt.ToShortDateString() + " " + _launchTime);
         else
@@ -65,7 +64,18 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         strs.AddRange(_announcements
             .Select(item => $"{item.Name}|{item.LastWriteTime}|{item.ActualStart}|{item.ActualEnd}").ToList());
 
-        File.WriteAllLines(path, strs);
+        File.WriteAllLines(_launchPath, strs);
+
+        FileInfo launchFile = new FileInfo(_launchPath);
+
+        _announcements.ToList().ForEach(item =>
+        {
+            FileInfo file = new(item.ImagePath);
+            if (file.Directory!.ToString() != launchFile.Directory!.ToString())
+            {
+                File.Copy(item.ImagePath, Path.Combine(launchFile.Directory.ToString(), item.Name));
+            }
+        });
     }
 
     // Method to write out changes made to settings.ini
@@ -203,7 +213,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 {
                     DateTime.TryParse(timeLine.Substring("time=".Length), out var dt);
                     LaunchDate = dt.ToShortDateString();
-                    LaunchTime = dt.ToShortTimeString();
+                    LaunchTimeStr = dt.ToShortTimeString();
                 }
 
                 var autoDeleteLine = announcementsStrs.FirstOrDefault(s => s.StartsWith("autodelete="));
@@ -413,21 +423,21 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    private string _launchDate;
+    private string _launchDateStr;
 
     public string LaunchDate
     {
-        get => _launchDate;
+        get => _launchDateStr;
         set
         {
-            _launchDate = value;
+            _launchDateStr = value;
             OnPropertyChanged();
         }
     }
 
     private string _launchTime = "09:00";
 
-    public string LaunchTime
+    public string LaunchTimeStr
     {
         get => _launchTime;
         set
