@@ -64,6 +64,7 @@ namespace PopUpWindow
             int seconds = updateRate;
             while (true)
             {
+                await Task.Delay(seconds * 1000);
                 try
                 {
                     if (new FileInfo(launchPath).Exists)
@@ -71,13 +72,12 @@ namespace PopUpWindow
                         FileManager manager = new FileManager(launchPath);
 
                         string dateTimeStr = manager.GetPrivateString("time");
-
+                        new InfoWindow($"|{dateTimeStr}|").Show();
                         DateTime targetTime;
                         
-                        if (DateTime.TryParseExact(dateTimeStr, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTime) == false)
+                        if (DateTime.TryParseExact(dateTimeStr, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTime) == false)
                         {
-                            _logger.CreateLog("Invalid time format. Expected format: '{HH:mm}'");
-                            return;
+                            _logger.CreateLog("Invalid time format. Expected format: '{HH:mm:ss}'");
                         }
                         
                         if (DateTime.TryParse(dateTimeStr, out DateTime tempdt))
@@ -98,7 +98,7 @@ namespace PopUpWindow
                 }
                 
                 // If the current time exceeds the target time, open windows
-                if (DateTime.Now > _targetTime)
+                if (_targetTime!= DateTime.MinValue && DateTime.Now > _targetTime)
                 {
                     try
                     {
@@ -114,8 +114,9 @@ namespace PopUpWindow
                             {
                                 autoDel = temp;
                             }
-
-
+                            
+                            //add windows check
+                            
                             if (MainSettings.Windows.Count == 0)
                             {
                                 OpenWindows(imagesPaths, autoDel);
@@ -128,8 +129,6 @@ namespace PopUpWindow
                         _logger.CreateLog("An error occurred while running StartUpWaiter: " + ex.Message);
                     }
                 }
-
-                await Task.Delay(seconds * 1000);
             }
         }
         

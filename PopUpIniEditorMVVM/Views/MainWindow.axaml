@@ -63,6 +63,7 @@
                                     <Grid>
                                         <TextBox Text="{Binding Directory}" />
                                         <Button HorizontalAlignment="Right"
+                                                VerticalAlignment="Top"
                                                 Content="🔍"
                                                 Command="{Binding DirectorySelectCommand}"
                                                 CommandParameter="{Binding ElementName=Window}" />
@@ -71,7 +72,7 @@
                                 <StackPanel IsVisible="{Binding IsSecondModeStackPanelVisible}">
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Экран для вывода:" />
-                                        <TextBox Width="30" Text="{Binding SelectedDisplay}" />
+                                        <TextBox Width="30" Text="{Binding SelectedDisplayContent}" />
                                         <Button Content="+"
                                                 Width="30"
                                                 Height="30"
@@ -93,7 +94,8 @@
                                         </Button>
                                     </StackPanel>
                                     <ListBox Background="transparent"
-                                             Items="{Binding Displays}">
+                                             Items="{Binding Displays}"
+                                             SelectedItem="{Binding SelectedDisplay}">
                                         <ListBox.ItemTemplate>
                                             <DataTemplate>
                                                 <Border BorderBrush="black"
@@ -123,7 +125,8 @@
                                    VerticalAlignment="Top"
                                    HorizontalAlignment="Center" />
                             <ListBox Background="transparent"
-                                     Items="{Binding Path=Displays}">
+                                     Items="{Binding Path=Displays}"
+                                     SelectedItem="{Binding SelectedDisplay}">
                                 <ListBox.Template>
                                     <ControlTemplate>
                                         <ItemsPresenter />
@@ -192,88 +195,128 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <StackPanel>
-                        <Label Content="Launch файл"
-                               Margin="0,3,0,0" />
-                        <Grid>
-                            <TextBox Text="{Binding LaunchPath}" />
-                            <Button HorizontalAlignment="Right"
-                                    Content="🔍"
-                                    Command="{Binding LaunchSelectCommand}"
-                                    CommandParameter="{Binding ElementName=Window}" />
-                        </Grid>
-                        <StackPanel Orientation="Horizontal">
-                            <Label Content="{Binding AnnouncementCountContent}" />
-                            <Button Content="+"
-                                    Width="30"
-                                    Height="30"
-                                    HorizontalContentAlignment="Center"
-                                    VerticalContentAlignment="Center"
-                                    Command="{Binding AddAnnouncementCommand}"
-                                    CommandParameter="{Binding ElementName=Window}">
-                                <ToolTip.Tip>
-                                    <TextBlock>Добавление объявления</TextBlock>
-                                </ToolTip.Tip>
-                            </Button>
-                            <Button Content="⌫"
-                                    Width="40" Height="30"
-                                    HorizontalContentAlignment="Center"
-                                    VerticalContentAlignment="Center"
-                                    Command="{Binding RemoveAnnouncementCommand}">
-                                <ToolTip.Tip>
-                                    <TextBlock>Удаляет выбранное обьявление из списка</TextBlock>
-                                </ToolTip.Tip>
-                            </Button>
-                        </StackPanel>
-                        <ListBox Background="transparent"
-                                 Items="{Binding Path=Announcements}"
-                                 SelectedItem="{Binding SelectedAnnouncement}">
-                            <ListBox.Template>
-                                <ControlTemplate>
-                                    <ItemsPresenter />
-                                </ControlTemplate>
-                            </ListBox.Template>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="350" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <Border Margin="5,0,5,0"
-                                                Background="#ebebe8"
-                                                BorderBrush="black"
-                                                BorderThickness="1"
-                                                CornerRadius="15">
-                                            <Image Margin="5"
-                                                   Source="{Binding ImagePath, Converter={StaticResource pathToBitmapConverter}}"
-                                                   Stretch="Uniform"
-                                                   ClipToBounds="True">
-                                            </Image>
-                                        </Border>
-                                        <Border Grid.Column="1"
-                                                BorderBrush="black"
-                                                BorderThickness="1"
-                                                CornerRadius="15"
-                                                Height="200"
-                                                Margin="5,0,5,0"
-                                                Background="#ebebe8">
-                                            <StackPanel Margin="10">
-                                                <Label Content="Название файла" />
-                                                <TextBox Text="{Binding Name}" />
-                                                <Label Content="Актуально с" />
-                                                <TextBox Text="{Binding ActualStart}" />
-                                                <Label Content="Актуально до" />
-                                                <TextBox Text="{Binding ActualEnd}" />
-                                            </StackPanel>
-                                        </Border>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </StackPanel>
-                    <Button Grid.Row="1"
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="250" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border BorderBrush="Black"
+                                BorderThickness="1"
+                                Margin="10"
+                                CornerRadius="15"
+                                Background="#ebebe8">
+                            <Image Source="../Assets/ini.png"
+                                   Margin="5" />
+                        </Border>
+
+                        <Border Grid.Column="1"
+                                BorderBrush="Black"
+                                BorderThickness="1"
+                                Margin="10"
+                                CornerRadius="15"
+                                Background="#ebebe8">
+                            <StackPanel Margin="10">
+                                <Label Content="Launch файл"
+                                       Margin="0,3,0,0" />
+                                <Grid>
+                                    <TextBox Text="{Binding LaunchPath}" />
+                                    <Button HorizontalAlignment="Right"
+                                            VerticalAlignment="Top"
+                                            Content="🔍"
+                                            Command="{Binding LaunchSelectCommand}"
+                                            CommandParameter="{Binding ElementName=Window}" />
+                                </Grid>
+                                
+                                <Label Content="Следующий запуск"
+                                       Margin="0,3,0,0"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <DatePicker SelectedDate="{Binding LaunchDate}"/>
+                                    <Button Content="✕"
+                                            Width="30" Height="30"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Margin="0,4,0,0"
+                                            Command="{Binding ClearDateCommand}"/>
+                                </StackPanel>
+                                <TimePicker SelectedTime="{Binding LaunchTime}"/>
+                                
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="{Binding AnnouncementCountContent}" />
+                                    <Button Content="+"
+                                            Width="30"
+                                            Height="30"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Command="{Binding AddAnnouncementCommand}"
+                                            CommandParameter="{Binding ElementName=Window}">
+                                        <ToolTip.Tip>
+                                            <TextBlock>Добавление объявления</TextBlock>
+                                        </ToolTip.Tip>
+                                    </Button>
+                                    <Button Content="⌫"
+                                            Width="40" Height="30"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Command="{Binding RemoveAnnouncementCommand}">
+                                        <ToolTip.Tip>
+                                            <TextBlock>Удаляет выбранное обьявление из списка</TextBlock>
+                                        </ToolTip.Tip>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <ListBox Grid.Row="1"
+                             Background="transparent"
+                             Items="{Binding Path=Announcements}"
+                             SelectedItem="{Binding SelectedAnnouncement}">
+                        <ListBox.Template>
+                            <ControlTemplate>
+                                <ItemsPresenter />
+                            </ControlTemplate>
+                        </ListBox.Template>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Height="200">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="350" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Margin="5,0,5,0"
+                                            Background="#ebebe8"
+                                            BorderBrush="black"
+                                            BorderThickness="1"
+                                            CornerRadius="15">
+                                        <Image Margin="5"
+                                               Source="{Binding ImagePath, Converter={StaticResource pathToBitmapConverter}}"
+                                               Stretch="Uniform"
+                                               ClipToBounds="True">
+                                        </Image>
+                                    </Border>
+                                    <Border Grid.Column="1"
+                                            BorderBrush="black"
+                                            BorderThickness="1"
+                                            CornerRadius="15"
+                                            Margin="5,0,5,0"
+                                            Background="#ebebe8">
+                                        <StackPanel Margin="10">
+                                            <Label Content="Название файла" />
+                                            <TextBox Text="{Binding Name}" />
+                                            <Label Content="Актуально с" />
+                                            <TextBox Text="{Binding ActualStart}" />
+                                            <Label Content="Актуально до" />
+                                            <TextBox Text="{Binding ActualEnd}" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Button Grid.Row="2"
                             Width="120"
                             Height="40"
                             Content="Сохранить"

@@ -19,6 +19,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     // Event to signal ViewModel property changes to the View and update the UI display
     public event PropertyChangedEventHandler PropertyChanged;
 
+    public ReactiveCommand<Unit, Unit> ClearDateCommand { get; }
     public ReactiveCommand<Unit, Unit> AddDisplayCommand { get; }
     public ReactiveCommand<Unit, Unit> RemoveDisplayCommand { get; }
     public ReactiveCommand<Window, Unit> AddAnnouncementCommand { get; }
@@ -31,6 +32,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     // Constructor creating each user command and associated action
     public MainWindowViewModel()
     {
+        ClearDateCommand = ReactiveCommand.Create(ClearDate);
         AddDisplayCommand = ReactiveCommand.Create(AddDisplay);
         RemoveDisplayCommand = ReactiveCommand.Create(RemoveDisplay);
         AddAnnouncementCommand = ReactiveCommand.Create<Window>(AddAnnouncement);
@@ -41,12 +43,23 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         LaunchSelectCommand = ReactiveCommand.Create<Window>(LaunchSelect);
     }
 
+    private void ClearDate()
+    {
+        LaunchDate = null;
+    }
+
     private void UpdateLaunchIniFile()
     {
         string path = _launchPath;
 
-        List<string> strs = _announcements
-            .Select(item => $"{item.ImagePath}|{item.LastWriteTime}|{item.ActualStart}|{item.ActualEnd}").ToList();
+        DateTime.TryParse(_launchDate, out var dt);
+        
+        List<string> strs = new()
+        {
+            $"time=" + dt.ToShortDateString() + " " + _launchTime + "\n"
+        };
+        strs.AddRange(_announcements
+            .Select(item => $"{item.ImagePath}|{item.LastWriteTime}|{item.ActualStart}|{item.ActualEnd}").ToList());
 
         File.WriteAllLines(path, strs);
     }
@@ -184,12 +197,12 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             OnPropertyChanged(nameof(AnnouncementCountContent));
         }
         else if (iniFile.Extension == ".ini")
-            LaunchPath = iniFile.FullName;
+            _launchPath = iniFile.FullName;
     }
 
     private void AddDisplay()
     {
-        int.TryParse(SelectedDisplay, out var displayNum);
+        int.TryParse(SelectedDisplayContent, out var displayNum);
 
         if (displayNum > 0 && Displays.All(item => item.DisplayNum != displayNum))
         {
@@ -202,7 +215,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     private void RemoveDisplay()
     {
-        int.TryParse(SelectedDisplay, out var display);
+        int.TryParse(SelectedDisplayContent, out var display);
 
         if (Displays.Any(item => item.DisplayNum == display))
             Displays.Remove(Displays.First(item => item.DisplayNum == display));
@@ -246,6 +259,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         try
         {
             Announcements.Remove(announcement);
+            OnPropertyChanged(nameof(AnnouncementCountContent));
             new InfoWindow($"announcement {announcement.Name} removed.").Show();
         }
         catch (Exception e)
@@ -266,6 +280,19 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             _selectedMode = value;
             OnPropertyChanged();
             ModeChanged();
+        }
+    }
+
+    private Object _selectedDisplay;
+
+    public Object SelectedDisplay
+    {
+        get => _selectedDisplay;
+        set
+        {
+            _selectedDisplay = value;
+            OnPropertyChanged();
+            SelectedDisplayContent = ((DisplayClass)_selectedDisplay).DisplayNum.ToString();
         }
     }
 
@@ -366,6 +393,30 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
+    private string _launchDate;
+
+    public string LaunchDate
+    {
+        get => _launchDate;
+        set
+        {
+            _launchDate = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string _launchTime = "09:00";
+
+    public string LaunchTime
+    {
+        get => _launchTime;
+        set
+        {
+            _launchTime = value;
+            OnPropertyChanged();
+        }
+    }
+
     private string _updateSettingsIniFileContent = "Создать";
 
     public string UpdateSettingsIniFileContent
@@ -378,14 +429,14 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    private string _selectedDisplay;
+    private string _selectedDisplayContent;
 
-    public string SelectedDisplay
+    public string SelectedDisplayContent
     {
-        get => _selectedDisplay;
+        get => _selectedDisplayContent;
         set
         {
-            _selectedDisplay = value;
+            _selectedDisplayContent = value;
             OnPropertyChanged();
         }
     }
