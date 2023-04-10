@@ -227,7 +227,8 @@
                             </Button>
                         </StackPanel>
                         <ListBox Background="transparent"
-                                 Items="{Binding Path=Announcements}">
+                                 Items="{Binding Path=Announcements}"
+                                 SelectedItem="{Binding SelectedAnnouncement}">
                             <ListBox.Template>
                                 <ControlTemplate>
                                     <ItemsPresenter />

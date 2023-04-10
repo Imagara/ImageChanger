@@ -100,10 +100,10 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     private void ModeChanged()
     {
-        if (_selectedMode is not Label label)
+        if (_selectedMode is not Label modeLabel)
             return;
 
-        bool isFirstMode = label.Content.ToString() == "1";
+        bool isFirstMode = modeLabel.Content.ToString() == "1";
 
         ModeHint = isFirstMode ? "Всплывашка" : "Карусель";
 
@@ -150,7 +150,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         if (iniFile.Exists && iniFile.Extension == ".ini")
         {
             var announcementsStrs = File.ReadLines(iniFile.FullName);
-            
+
             _announcements.Clear();
             foreach (var item in announcementsStrs)
             {
@@ -161,7 +161,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 if (regex.IsMatch(item))
                 {
                     string[] subs = item.Split('|');
-                    
+
                     DateTime lastWriteTime;
                     DateTime actualStart;
                     DateTime actualEnd;
@@ -240,6 +240,18 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     private void RemoveAnnouncement()
     {
+        if (_selectedAnnouncement is not AnnouncementClass announcement)
+            return;
+
+        try
+        {
+            Announcements.Remove(announcement);
+            new InfoWindow($"announcement {announcement.Name} removed.").Show();
+        }
+        catch (Exception e)
+        {
+            new InfoWindow("Error while removing announcement: " + e.Message).Show();
+        }
     }
 
     public string AnnouncementCountContent => $"Обьявлений : {_announcements.Count}";
@@ -254,6 +266,18 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             _selectedMode = value;
             OnPropertyChanged();
             ModeChanged();
+        }
+    }
+
+    private Object _selectedAnnouncement;
+
+    public Object SelectedAnnouncement
+    {
+        get => _selectedAnnouncement;
+        set
+        {
+            _selectedAnnouncement = value;
+            OnPropertyChanged();
         }
     }
 
