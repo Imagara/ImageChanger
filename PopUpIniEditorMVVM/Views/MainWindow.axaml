@@ -311,7 +311,7 @@
                                             Background="#ebebe8">
                                         <StackPanel Margin="10">
                                             <Label Content="Название файла" />
-                                            <TextBox Text="{Binding Name}" />
+                                            <TextBox Text="{Binding Name, Mode=OneWay}" IsReadOnly="True"/>
                                             <Label Content="Актуально с" />
                                             <TextBox Text="{Binding ActualStart}" />
                                             <Label Content="Актуально до" />
