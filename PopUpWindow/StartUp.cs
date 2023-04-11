@@ -114,8 +114,7 @@ namespace PopUpWindow
                                 autoDel = temp;
                             }
                             
-                            //add windows check
-                            
+
                             if (MainSettings.Windows.Count == 0)
                             {
                                 OpenWindows(imagesPaths, autoDel);

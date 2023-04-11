@@ -23,7 +23,7 @@ namespace PopUpWindow
         public MainWindow(int screenNum, List<string> imagesPaths, bool autoDel = true)
         {
             InitializeComponent();
-
+            Closed += MainWindow_Closed;
             _screenNum = screenNum;
             _imagesPaths = imagesPaths;
             _autoDel = autoDel;
@@ -85,6 +85,15 @@ namespace PopUpWindow
             }
             else
                 Close();
+        }
+        void MainWindow_Closed(object sender, EventArgs e)
+        {
+            foreach (var window in MainSettings.Windows.ToList())
+            {
+                window.Close();
+                MainSettings.Windows.Remove(window);
+            }
+            new InfoWindow("Closed. Windows: " + MainSettings.Windows.Count).Show();
         }
 
         private async void SecondModeCycle()

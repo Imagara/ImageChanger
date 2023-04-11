@@ -114,17 +114,21 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             // Write the updated settings.ini file
             File.WriteAllLines("settings.ini", strs);
 
-            //need to test
-            Process PrFolder = new Process();
-            ProcessStartInfo psi = new ProcessStartInfo();
-            string file = Path.Combine(Environment.CurrentDirectory, "settings.ini");
-            psi.CreateNoWindow = true;
-            psi.WindowStyle = ProcessWindowStyle.Normal;
-            psi.FileName = "explorer";
-            psi.Arguments = @"/n, /select, " + file;
-            PrFolder.StartInfo = psi;
-            PrFolder.Start();
+            SelectUpdatedFile();
         }
+    }
+
+    private void SelectUpdatedFile()
+    {
+        Process PrFolder = new Process();
+        ProcessStartInfo psi = new ProcessStartInfo();
+        string file = Path.Combine(Environment.CurrentDirectory, "settings.ini");
+        psi.CreateNoWindow = true;
+        psi.WindowStyle = ProcessWindowStyle.Normal;
+        psi.FileName = "explorer";
+        psi.Arguments = @"/n, /select, " + file;
+        PrFolder.StartInfo = psi;
+        PrFolder.Start();
     }
 
     private void ModeChanged()
