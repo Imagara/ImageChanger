@@ -64,7 +64,6 @@ namespace PopUpWindow
             int seconds = updateRate;
             while (true)
             {
-               await Task.Delay(seconds * 1000);
                 try
                 {
                     if (new FileInfo(launchPath).Exists)
@@ -75,7 +74,7 @@ namespace PopUpWindow
                         
                         DateTime targetTime;
                         
-                        if (DateTime.TryParseExact(dateTimeStr, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTime) == false)
+                        if (!DateTime.TryParseExact(dateTimeStr, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTime))
                         {
                             _logger.CreateLog("Invalid time format. Expected format: '{HH:mm:ss}'");
                         }
@@ -129,6 +128,7 @@ namespace PopUpWindow
                         _logger.CreateLog("An error occurred while running StartUpWaiter: " + ex.Message);
                     }
                 }
+                await Task.Delay(seconds * 1000);
             }
         }
         

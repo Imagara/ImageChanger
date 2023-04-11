@@ -233,7 +233,7 @@
                                 <Label Content="Следующий запуск"
                                        Margin="0,3,0,0"/>
                                 <StackPanel Orientation="Horizontal">
-                                    <DatePicker SelectedDate="{Binding LaunchDate}"/>
+                                    <DatePicker SelectedDate="{Binding LaunchDateStr}"/>
                                     <Button Content="✕"
                                             Width="30" Height="30"
                                             HorizontalContentAlignment="Center"
@@ -242,7 +242,7 @@
                                             Command="{Binding ClearDateCommand}"/>
                                 </StackPanel>
                                 
-                                <TimePicker SelectedTime="{Binding LaunchTime}"/>
+                                <TimePicker SelectedTime="{Binding LaunchTimeStr}"/>
                                 
                                 <StackPanel Orientation="Horizontal">
                                     <Label Content="Удалять после показа?"></Label>

@@ -45,7 +45,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     private void ClearDate()
     {
-        LaunchDate = null;
+        LaunchDateStr = null;
     }
 
     private void UpdateLaunchIniFile()
@@ -68,14 +68,14 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
         FileInfo launchFile = new FileInfo(_launchPath);
 
-        _announcements.ToList().ForEach(item =>
+        foreach (var item in _announcements)
         {
             FileInfo file = new(item.ImagePath);
             if (file.Directory!.ToString() != launchFile.Directory!.ToString())
             {
                 File.Copy(item.ImagePath, Path.Combine(launchFile.Directory.ToString(), item.Name));
             }
-        });
+        }
     }
 
     // Method to write out changes made to settings.ini
@@ -212,7 +212,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 if (timeLine != null)
                 {
                     DateTime.TryParse(timeLine.Substring("time=".Length), out var dt);
-                    LaunchDate = dt.ToShortDateString();
+                    LaunchDateStr = dt.ToShortDateString();
                     LaunchTimeStr = dt.ToShortTimeString();
                 }
 
@@ -425,7 +425,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     private string _launchDateStr;
 
-    public string LaunchDate
+    public string LaunchDateStr
     {
         get => _launchDateStr;
         set
@@ -435,7 +435,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    private string _launchTime = "09:00";
+    private string _launchTime = "09:00:00";
 
     public string LaunchTimeStr
     {
