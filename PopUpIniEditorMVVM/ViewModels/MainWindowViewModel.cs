@@ -76,6 +76,8 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 File.Copy(item.ImagePath, Path.Combine(launchFile.Directory.ToString(), item.Name));
             }
         }
+
+        new InfoWindow($"Сохранено.").Show();
     }
 
     // Method to write out changes made to settings.ini
@@ -182,7 +184,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             foreach (var item in announcementsStrs)
             {
                 Regex announcementRegex = new Regex(
-                    @"^[A-Za-z0-9.:\\/-]{4,128}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}",
+                    @"^[A-Za-zА-Яа-я0-9.() —:\\/-]{4,128}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}",
                     RegexOptions.Compiled);
 
                 if (!announcementRegex.IsMatch(item))
@@ -207,21 +209,21 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                     ActualStart = actualStart,
                     ActualEnd = actualEnd
                 });
+            }
 
-                var timeLine = announcementsStrs.FirstOrDefault(s => s.StartsWith("time="));
-                if (timeLine != null)
-                {
-                    DateTime.TryParse(timeLine.Substring("time=".Length), out var dt);
-                    LaunchDateStr = dt.ToShortDateString();
-                    LaunchTimeStr = dt.ToShortTimeString();
-                }
+            var timeLine = announcementsStrs.FirstOrDefault(s => s.StartsWith("time="));
+            if (timeLine != null)
+            {
+                DateTime.TryParse(timeLine.Substring("time=".Length), out var dt);
+                LaunchDateStr = dt.ToShortDateString();
+                LaunchTimeStr = dt.ToShortTimeString();
+            }
 
-                var autoDeleteLine = announcementsStrs.FirstOrDefault(s => s.StartsWith("autodelete="));
-                if (autoDeleteLine != null)
-                {
-                    bool.TryParse(autoDeleteLine.Substring("autodelete=".Length), out var autoDeleteFiles);
-                    LaunchAutoDeleteFile = autoDeleteFiles;
-                }
+            var autoDeleteLine = announcementsStrs.FirstOrDefault(s => s.StartsWith("autodelete="));
+            if (autoDeleteLine != null)
+            {
+                bool.TryParse(autoDeleteLine.Substring("autodelete=".Length), out var autoDeleteFiles);
+                LaunchAutoDeleteFile = autoDeleteFiles;
             }
 
             OnPropertyChanged(nameof(AnnouncementCountContent));
@@ -290,7 +292,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         {
             Announcements.Remove(announcement);
             OnPropertyChanged(nameof(AnnouncementCountContent));
-            new InfoWindow($"announcement {announcement.Name} removed.").Show();
+            new InfoWindow($"Обьявление {announcement.Name} удалено.").Show();
         }
         catch (Exception e)
         {

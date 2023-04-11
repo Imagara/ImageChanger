@@ -135,7 +135,7 @@ namespace PopUpWindow
         private List<string> GetImages()
         {
             Regex regex = new Regex(
-                @"^[A-Za-z0-9.:\\/-]{4,128}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}",
+                @"^[A-Za-zА-Яа-я0-9.() —:\\/-]{4,128}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}",
                 RegexOptions.Compiled);
 
             var allStrs = File.ReadAllLines(Path.Combine(MainSettings.Directory,"launch.ini"));
