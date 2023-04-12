@@ -15,6 +15,6 @@ namespace PopUpWindow
         public static int Mode { get; set; } = 1;
         public static string Directory { get; set; } = Environment.CurrentDirectory;
         public static int IniReaderRefreshRate { get; set; } = 60;
-        public static string[] Extensions { get; set; } = { "png", "jpeg", "jpg", "bmp", "tiff", "jfif", "webp" };
+        public static string[] Extensions { get; set; } = { ".png", ".jpeg", ".jpg", ".bmp", ".tiff", "jfif", "webp" };
     }
 }

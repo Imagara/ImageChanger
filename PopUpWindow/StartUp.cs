@@ -173,7 +173,7 @@ namespace PopUpWindow
                 if (!file.Exists)
                     continue;
 
-                if (MainSettings.Extensions.All(ext => '.' + ext != file.Extension))
+                if (MainSettings.Extensions.All(ext => ext != file.Extension))
                     continue;
 
                 var historyPath = Path.Combine(Environment.CurrentDirectory, "history.hy");

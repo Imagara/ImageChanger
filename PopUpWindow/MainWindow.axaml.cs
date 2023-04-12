@@ -93,7 +93,6 @@ namespace PopUpWindow
                 window.Close();
                 MainSettings.Windows.Remove(window);
             }
-            new InfoWindow("Closed. Windows: " + MainSettings.Windows.Count).Show();
         }
 
         private async void SecondModeCycle()
