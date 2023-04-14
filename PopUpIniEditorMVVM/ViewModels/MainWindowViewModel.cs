@@ -113,8 +113,9 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
             // Write the updated settings.ini file
             File.WriteAllLines("settings.ini", strs);
-
-            SelectUpdatedFile();
+            if (Environment.OSVersion.Platform.ToString() != "Unix")
+                SelectUpdatedFile();
+            new InfoWindow($"Сохранено.").Show();
         }
     }
 

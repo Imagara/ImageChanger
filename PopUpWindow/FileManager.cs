@@ -13,11 +13,11 @@ namespace PopUpWindow
         private readonly Logger _logger = new();
 
         private static readonly Regex IniSectionLineMatcher = new Regex(
-            @"^([A-Za-z]+=[0-9]+)|([A-Za-z]+=[A-Za-z]+)|([A-Za-z]+=([0-1][0-9]|[2][1-3])[:./\s-][0-5][0-9])|([[0-9A-Za-z]+])",
+            @"^([A-Za-z]+=)|([[0-9A-Za-z]+])",
             RegexOptions.Compiled);
 
         private static readonly Regex IniLineMatcher = new Regex(
-            @"^([A-Za-z]+=[0-9]+)|([A-Za-z]+=[A-Za-z]+)|([A-Za-z]+=([0-1][0-9]|[2][1-3])[:./\s-][0-5][0-9])",
+            @"^[A-Za-z]+=",
             RegexOptions.Compiled);
 
         //Конструктор, принимающий путь к INI-файлу

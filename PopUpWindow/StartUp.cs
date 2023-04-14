@@ -60,7 +60,7 @@ namespace PopUpWindow
         async void StartUpWaiter(int updateRate = 60)
         {
             string launchPath = Path.Combine(MainSettings.Directory, "launch.ini");
-            
+            new InfoWindow(launchPath).Show();
             int seconds = updateRate;
             while (true)
             {
@@ -89,6 +89,10 @@ namespace PopUpWindow
                             _logger.CreateLog($"StartUpWaiter: Next Start: {targetTime}");
                         
                         _targetTime = targetTime;
+                    }
+                    else
+                    {
+                        _logger.CreateLog($"launch file not exists");
                     }
                 }
                 catch (Exception ex)
@@ -205,6 +209,7 @@ namespace PopUpWindow
 
                 if (mode == 1)
                 {
+                    new InfoWindow("mode 1, " + manager.GetPrivateString($"main", "directory").Trim()).Show();
                     MainSettings.Directory =
                         manager.GetPrivateString($"main", "directory").Trim() != string.Empty
                             ? manager.GetPrivateString($"main", "directory")

@@ -71,7 +71,8 @@ namespace PopUpWindow
                     if (bool.TryParse(manager.GetPrivateString("main", "leftpanel"),
                             out var isVisible))
                     {
-                        HelpGrid.IsVisible = isVisible;
+                        //HelpGrid.IsVisible = isVisible;
+                        HelpGrid.IsVisible = false;
                     }
 
                     _logger.CreateLog($"{_screenNum} display: settings successfully imported");
@@ -101,7 +102,7 @@ namespace PopUpWindow
             {
                 GetAllPictures();
                 if (_imagesPaths.Count == 0)
-                    await Task.Delay(1800 * 1000);;
+                    await Task.Delay(1800 * 1000);
                 foreach (var item in _imagesPaths)
                 {
                     MainImage.Source = new Bitmap(item);
