@@ -27,7 +27,7 @@ namespace PopUpWindow
             {
                 string historyPath = Path.Combine(Environment.CurrentDirectory, "history.hy");
                 FileInfo historyFile = new FileInfo(historyPath);
-                
+
                 // Create file if it does not already exist
                 if (!historyFile.Exists)
                 {
@@ -56,38 +56,105 @@ namespace PopUpWindow
                 OpenWindows();
         }
 
+        private bool CheckActivity()
+        {
+            try
+            {
+                TimeOnly timeNow = TimeOnly.Parse(DateTime.Now.ToString("HH:mm"));
+                if (timeNow < MainSettings.ActivityStart
+                    || timeNow > MainSettings.ActivityEnd)
+                    return false;
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.CreateLog($"StartUpWaiter: Activity error: " + ex.Message);
+                return false;
+            }
+        }
+
+        async void StartUpWaiter(int seconds)
+        {
+            while (true)
+            {
+                if (!CheckActivity())
+                {
+                    await Task.Delay(seconds * 1000);
+                    continue;
+                }
+
+                try
+                {
+                    List<string> imagesPaths = GetImages();
+
+                    // If there are images to show, open windows
+                    if (imagesPaths.Count > 0)
+                    {
+                        FileManager manager = new FileManager(Path.Combine(MainSettings.Directory, "launch.ini"));
+
+                        bool autoDel = true;
+                        if (bool.TryParse(manager.GetPrivateString("autodelete"), out var temp))
+                        {
+                            autoDel = temp;
+                        }
+
+
+                        if (MainSettings.Windows.Count == 0)
+                        {
+                            OpenWindows(imagesPaths, autoDel);
+                            _logger.CreateLog($"StartUpWaiter: Windows opened");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.CreateLog("An error occurred while running StartUpWaiter: " + ex.Message);
+                }
+
+                await Task.Delay(seconds * 1000);
+            }
+        }
+
+
         //Method for continuously checking for a delayed start time
-        async void StartUpWaiter(int updateRate = 60)
+        async void StartUpWaiterEx(int updateRate = 60)
         {
             string launchPath = Path.Combine(MainSettings.Directory, "launch.ini");
-            new InfoWindow(launchPath).Show();
+
             int seconds = updateRate;
             while (true)
             {
                 try
                 {
+                    TimeOnly timeNow = TimeOnly.Parse(DateTime.Now.ToString("HH:mm"));
+                    if (timeNow < MainSettings.ActivityStart
+                        || timeNow > MainSettings.ActivityEnd)
+                        continue;
+
                     if (new FileInfo(launchPath).Exists)
                     {
                         FileManager manager = new FileManager(launchPath);
 
                         string dateTimeStr = manager.GetPrivateString("time");
-                        
+
                         DateTime targetTime;
-                        
-                        if (!DateTime.TryParseExact(dateTimeStr, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out targetTime))
+
+                        if (!DateTime.TryParseExact(dateTimeStr, "HH:mm:ss", CultureInfo.InvariantCulture,
+                                DateTimeStyles.None, out targetTime))
                         {
                             _logger.CreateLog("Invalid time format. Expected format: '{HH:mm:ss}'");
                         }
-                        
+
                         if (DateTime.TryParse(dateTimeStr, out DateTime tempdt))
                             targetTime = tempdt;
-                        
-                      if (targetTime.Equals(DateTime.MinValue))
-                          continue;
-                        
+
+                        if (targetTime.Equals(DateTime.MinValue))
+                            continue;
+
                         if (_targetTime != targetTime)
                             _logger.CreateLog($"StartUpWaiter: Next Start: {targetTime}");
-                        
+
                         _targetTime = targetTime;
                     }
                     else
@@ -97,27 +164,27 @@ namespace PopUpWindow
                 }
                 catch (Exception ex)
                 {
-                    _logger.CreateLog($"StartUpWaiter: Error while reading date");
+                    _logger.CreateLog($"StartUpWaiter: Error: " + ex.Message);
                 }
-                
+
                 // If the current time exceeds the target time, open windows
-                if (_targetTime!= DateTime.MinValue && DateTime.Now > _targetTime)
+                if (_targetTime != DateTime.MinValue && DateTime.Now > _targetTime)
                 {
                     try
                     {
                         List<string> imagesPaths = GetImages();
-                        
+
                         // If there are images to show, open windows
                         if (imagesPaths.Count > 0)
                         {
                             FileManager manager = new FileManager(launchPath);
-                            
+
                             bool autoDel = true;
                             if (bool.TryParse(manager.GetPrivateString("autodelete"), out var temp))
                             {
                                 autoDel = temp;
                             }
-                            
+
 
                             if (MainSettings.Windows.Count == 0)
                             {
@@ -131,20 +198,21 @@ namespace PopUpWindow
                         _logger.CreateLog("An error occurred while running StartUpWaiter: " + ex.Message);
                     }
                 }
+
                 await Task.Delay(seconds * 1000);
             }
         }
-        
+
         private List<string> GetImages()
         {
             Regex regex = new Regex(
                 @"^[A-Za-zА-Яа-я0-9.() —:\\/-]{4,128}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}",
                 RegexOptions.Compiled);
 
-            var allStrs = File.ReadAllLines(Path.Combine(MainSettings.Directory,"launch.ini"));
+            var allStrs = File.ReadAllLines(Path.Combine(MainSettings.Directory, "launch.ini"));
 
             List<string> imagesPaths = new();
-            
+
             foreach (var item in allStrs)
             {
                 if (!regex.IsMatch(item))
@@ -172,7 +240,7 @@ namespace PopUpWindow
                     continue;
 
 
-                FileInfo file = new FileInfo(Path.Combine(MainSettings.Directory,subs[0]));
+                FileInfo file = new FileInfo(Path.Combine(MainSettings.Directory, subs[0]));
 
                 if (!file.Exists)
                     continue;
@@ -186,6 +254,7 @@ namespace PopUpWindow
                 if (!historyManager.IsHistoryContains(subs[0], lastWriteTime))
                     imagesPaths.Add(subs[0]);
             }
+
             _logger.CreateLog(
                 $"got {imagesPaths.Count} files from {MainSettings.Directory}");
             return imagesPaths;
@@ -209,11 +278,18 @@ namespace PopUpWindow
 
                 if (mode == 1)
                 {
-                    new InfoWindow("mode 1, " + manager.GetPrivateString($"main", "directory").Trim()).Show();
                     MainSettings.Directory =
                         manager.GetPrivateString($"main", "directory").Trim() != string.Empty
                             ? manager.GetPrivateString($"main", "directory")
                             : MainSettings.Directory;
+                    MainSettings.ActivityStart = TimeOnly.TryParse(manager.GetPrivateString("main", "activitystart"),
+                        out var timeStart)
+                        ? timeStart
+                        : MainSettings.ActivityStart;
+                    MainSettings.ActivityEnd =
+                        TimeOnly.TryParse(manager.GetPrivateString("main", "activityend"), out var timeEnd)
+                            ? timeEnd
+                            : MainSettings.ActivityEnd;
                 }
                 else if (mode == 2)
                 {
@@ -222,6 +298,7 @@ namespace PopUpWindow
                             .Where(i => !string.IsNullOrWhiteSpace(i)).Select(byte.Parse).ToArray()
                         : new byte[] { 1 };
                 }
+
 
                 _logger.CreateLog($"Main settings for mode {mode} successfully imported");
             }

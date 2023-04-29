@@ -97,7 +97,9 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             };
             if (mode is 1)
             {
-                strs.Add($"directory={_directory}");
+                strs.Add($"directory={_directory}\n" +
+                         $"activitystart={_activityStart}\n" +
+                         $"activityend={_activityEnd}");
             }
             else
             {
@@ -139,7 +141,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
         bool isFirstMode = modeLabel.Content.ToString() == "1";
 
-        ModeHint = isFirstMode ? "Всплывашка" : "Карусель";
+        ModeHint = isFirstMode ? "Отображает доступные объявления на экран" : "Циклично показывает изображения";
 
         IsFirstModeStackPanelVisible = isFirstMode;
         IsSecondModeStackPanelVisible = !isFirstMode;
@@ -429,6 +431,18 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
+    
+    private bool _isBlackout = false;
+
+    public bool IsBlackout
+    {
+        get => _isBlackout;
+        set
+        {
+            _isBlackout = value;
+            OnPropertyChanged();
+        }
+    }
 
     private string _launchDateStr;
 
@@ -450,6 +464,30 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             _launchTime = value;
+            OnPropertyChanged();
+        }
+    }
+    
+    private string _activityStart = "09:00:00";
+
+    public string ActivityStart
+    {
+        get => _activityStart;
+        set
+        {
+            _activityStart = value;
+            OnPropertyChanged();
+        }
+    }
+    
+    private string _activityEnd = "21:00:00";
+
+    public string ActivityEnd
+    {
+        get => _activityEnd;
+        set
+        {
+            _activityEnd = value;
             OnPropertyChanged();
         }
     }

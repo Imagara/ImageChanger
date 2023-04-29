@@ -59,8 +59,8 @@
                                            Foreground="darkgray" />
                                 </StackPanel>
                                 <StackPanel IsVisible="{Binding IsFirstModeStackPanelVisible}">
-                                    <Label Content="Директория с файлами" />
-                                    <Grid>
+                                    <Label Content="Директория с файлами" Name="DirLabel" />
+                                    <Grid Width="{Binding Width, ElementName=DirLabel}">
                                         <TextBox Text="{Binding Directory}" />
                                         <Button HorizontalAlignment="Right"
                                                 VerticalAlignment="Top"
@@ -68,8 +68,23 @@
                                                 Command="{Binding DirectorySelectCommand}"
                                                 CommandParameter="{Binding ElementName=Window}" />
                                     </Grid>
+                                    <Label Content="Активность" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TimePicker SelectedTime="{Binding ActivityStart}" />
+                                        <TimePicker SelectedTime="{Binding ActivityEnd}" />
+                                    </StackPanel>
                                 </StackPanel>
                                 <StackPanel IsVisible="{Binding IsSecondModeStackPanelVisible}">
+
+                                    <CheckBox IsChecked="{Binding IsBlackout}"
+                                        Content="Затемнение экрана"/>
+                                    
+                                    <StackPanel Orientation="Horizontal"
+                                                IsVisible="{Binding IsBlackout}">
+                                        <TimePicker SelectedTime="{Binding ActivityStart}" />
+                                        <TimePicker SelectedTime="{Binding ActivityEnd}" />
+                                    </StackPanel>
+
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Экран для вывода:" />
                                         <TextBox Width="30" Text="{Binding SelectedDisplayContent}" />
@@ -158,9 +173,9 @@
                                                     Margin="5,0,5,0"
                                                     Background="#ebebe8">
                                                 <StackPanel Margin="10" IsVisible="{Binding IsModeTwo}">
-                                                    <Label Content="Directory" />
+                                                    <Label Content="Директория" />
                                                     <TextBox Text="{Binding DirectoryPath}" />
-                                                    <Label Content="Rate" />
+                                                    <Label Content="Частота смены изображения в секундах" />
                                                     <TextBox Text="{Binding Rate}"
                                                              Width="70"
                                                              HorizontalAlignment="Left" />
@@ -229,25 +244,9 @@
                                             Command="{Binding LaunchSelectCommand}"
                                             CommandParameter="{Binding ElementName=Window}" />
                                 </Grid>
-                                
-                                <Label Content="Следующий запуск"
-                                       Margin="0,3,0,0"/>
-                                <StackPanel Orientation="Horizontal">
-                                    <DatePicker SelectedDate="{Binding LaunchDateStr}"/>
-                                    <Button Content="✕"
-                                            Width="30" Height="30"
-                                            HorizontalContentAlignment="Center"
-                                            VerticalContentAlignment="Center"
-                                            Margin="0,4,0,0"
-                                            Command="{Binding ClearDateCommand}"/>
-                                </StackPanel>
-                                
-                                <TimePicker SelectedTime="{Binding LaunchTimeStr}"/>
-                                
-                                <StackPanel Orientation="Horizontal">
-                                    <Label Content="Удалять после показа?"></Label>
-                                    <CheckBox IsChecked="{Binding LaunchAutoDeleteFile}"/>
-                                </StackPanel>
+
+                                <CheckBox IsChecked="{Binding LaunchAutoDeleteFile}"
+                                          Content="Удаление после показа"/>
                                 
                                 <StackPanel Orientation="Horizontal">
                                     <Label Content="{Binding AnnouncementCountContent}" />
@@ -311,7 +310,7 @@
                                             Background="#ebebe8">
                                         <StackPanel Margin="10">
                                             <Label Content="Название файла" />
-                                            <TextBox Text="{Binding Name, Mode=OneWay}" IsReadOnly="True"/>
+                                            <TextBox Text="{Binding Name, Mode=OneWay}" IsReadOnly="True" />
                                             <Label Content="Актуально с" />
                                             <TextBox Text="{Binding ActualStart}" />
                                             <Label Content="Актуально до" />
