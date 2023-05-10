@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls;
+﻿ using Avalonia.Controls;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -39,7 +39,7 @@ namespace PopUpWindow
             }
             catch (Exception ex)
             {
-                _logger.CreateLog($"Error while creating history.hy");
+                _logger.CreateLog($"Error while creating history.hy: {ex.Message}");
             }
 
 
