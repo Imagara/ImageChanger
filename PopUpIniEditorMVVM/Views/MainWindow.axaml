@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:PopUpIniEditorMVVM"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="PopUpIniEditorMVVM.Views.MainWindow"
-        MinWidth="600" MinHeight="300"
+        MinWidth="700" MinHeight="400"
         Icon="/Assets/avalonia-logo.ico"
         Title="PopUpIniEditorMVVM"
         Name="Window">
@@ -112,6 +112,9 @@
                                     <ListBox Background="transparent"
                                              Items="{Binding Displays}"
                                              SelectedItem="{Binding SelectedDisplay}">
+                                        <ListBox.KeyBindings>
+                                            <KeyBinding Gesture="Delete" Command="{Binding RemoveDisplayCommand}"></KeyBinding>
+                                        </ListBox.KeyBindings>
                                         <ListBox.ItemTemplate>
                                             <DataTemplate>
                                                 <Border BorderBrush="black"
@@ -121,7 +124,7 @@
                                                         Width="30">
                                                     <Label Content="{Binding DisplayNum}"
                                                            HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center" />
+                                                           VerticalAlignment="Center"/>
                                                 </Border>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
@@ -144,6 +147,9 @@
                             <ListBox Background="transparent"
                                      Items="{Binding Path=Displays}"
                                      SelectedItem="{Binding SelectedDisplay}">
+                                <ListBox.KeyBindings>
+                                    <KeyBinding Gesture="Delete" Command="{Binding RemoveDisplayCommand}"></KeyBinding>
+                                </ListBox.KeyBindings>
                                 <ListBox.Template>
                                     <ControlTemplate>
                                         <ItemsPresenter />
@@ -283,6 +289,9 @@
                                  Background="transparent"
                                  Items="{Binding Path=Announcements}"
                                  SelectedItem="{Binding SelectedAnnouncement}">
+                            <ListBox.KeyBindings>
+                                <KeyBinding Gesture="Delete" Command="{Binding RemoveAnnouncementCommand}"></KeyBinding>
+                            </ListBox.KeyBindings>
                             <ListBox.Template>
                                 <ControlTemplate>
                                     <ItemsPresenter />
@@ -336,65 +345,83 @@
                                 HorizontalContentAlignment="Center"
                                 Command="{Binding UpdateLaunchIniFileCommand}">
                         </Button>
-
-                        <!-- here -->
                     </Grid>
                 </ScrollViewer>
-
-                <Border Grid.RowSpan="3"
-                        IsVisible="False"
-                        CornerRadius="15"
-                        Background="#ebebe8"
-                        Margin="50"
-                        BorderBrush="black"
-                        BorderThickness="1">
+                <Image >
+                    
+                </Image>
+                <Grid IsVisible="{Binding IsReplaceAnnouncementOpened}"
+                      Background="transparent">
+                    <Border Grid.RowSpan="3"
+                            CornerRadius="15"
+                            Background="#ebebe8"
+                            Margin="25,15,25,25"
+                            MaxHeight="{Binding $parent[Grid].Bounds.Height}"
+                            BorderBrush="black"
+                            BorderThickness="1">
                     <Grid Margin="25">
                         <StackPanel Spacing="10">
-                            <Label Content="Уже существует файл с названием 'name'"
-                                   HorizontalContentAlignment="Center" />
-                            <Grid Grid.Row="1">
+                            <Label HorizontalContentAlignment="Center">
+                                <Label.Content>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Уже существует файл с названием"/>
+                                        <Label Content="{Binding ReplaceFileName}"/>
+                                    </StackPanel>
+                                </Label.Content>
+                            </Label>
+                            <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="0.8*" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
-                                    <Image Name="OldAnnouncement"
-                                           Width="{Binding $parent[StackPanel].Bounds.Width}"
-                                           Source="../Assets/ini.png">
-                                    </Image>
                                     <Label Content="Существующий"
                                            HorizontalAlignment="Center" />
+                                    <Image Width="{Binding $parent[StackPanel].Bounds.Width}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Source="{Binding OldAnnouncementImage, Converter={StaticResource pathToBitmapConverter}}">
+                                    </Image>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1"
                                             Spacing="10">
                                     <Button Width="{Binding $parent[StackPanel].Bounds.Width}"
                                             Height="30"
                                             Content="Заменить"
-                                            HorizontalContentAlignment="Center" />
+                                            HorizontalContentAlignment="Center"
+                                            Command="{Binding ReplaceAnnouncementCommand}"
+                                            CommandParameter="replace"/>
                                     <Grid>
-                                        <TextBox Watermark="Новое название"></TextBox>
+                                        <TextBox Watermark="Новое название"
+                                                 Text="{Binding ReplaceNewFileName}"/>
                                         <Button Height="30" Width="30"
                                                 HorizontalAlignment="Right"
-                                                Content="✓" />
+                                                Content="✓"
+                                                Command="{Binding ReplaceAnnouncementCommand}"
+                                                CommandParameter="rename"/>
                                     </Grid>
                                     <Button Width="{Binding $parent[StackPanel].Bounds.Width}"
                                             Height="30"
                                             Content="Пропустить"
-                                            HorizontalContentAlignment="Center" />
+                                            HorizontalContentAlignment="Center"
+                                            Command="{Binding ReplaceAnnouncementCommand}"
+                                            CommandParameter="skip"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
-                                    <Image Name="NewAnnouncement"
-                                           Width="{Binding $parent[StackPanel].Bounds.Width}"
-                                           Source="../Assets/ini.png">
-                                    </Image>
                                     <Label Content="Новый"
                                            HorizontalAlignment="Center" />
+                                    <Image Width="{Binding $parent[StackPanel].Bounds.Width}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Source="{Binding NewAnnouncementImage, Converter={StaticResource pathToBitmapConverter}}">
+                                    </Image>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
                     </Grid>
                 </Border>
+                </Grid>
             </Grid>
         </TabItem>
     </TabControl>

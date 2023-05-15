@@ -7,8 +7,12 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices.JavaScript;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Media.Imaging;
 using PopUpIniEditorMVVM.Views;
 using ReactiveUI;
 
@@ -19,6 +23,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     // Event to signal ViewModel property changes to the View and update the UI display
     public event PropertyChangedEventHandler PropertyChanged;
 
+    public ReactiveCommand<string, Unit> ReplaceAnnouncementCommand { get; }
     public ReactiveCommand<Unit, Unit> ClearDateCommand { get; }
     public ReactiveCommand<Unit, Unit> AddDisplayCommand { get; }
     public ReactiveCommand<Unit, Unit> RemoveDisplayCommand { get; }
@@ -32,10 +37,11 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     // Constructor creating each user command and associated action
     public MainWindowViewModel()
     {
+        ReplaceAnnouncementCommand = ReactiveCommand.Create<string>(ReplaceAnnouncementChangeAnswer);
         ClearDateCommand = ReactiveCommand.Create(ClearDate);
         AddDisplayCommand = ReactiveCommand.Create(AddDisplay);
         RemoveDisplayCommand = ReactiveCommand.Create(RemoveDisplay);
-        AddAnnouncementCommand = ReactiveCommand.Create<Window>(AddAnnouncement);
+        AddAnnouncementCommand = ReactiveCommand.Create<Window>(AddAnnouncementOpenDialog);
         RemoveAnnouncementCommand = ReactiveCommand.Create(RemoveAnnouncement);
         UpdateSettingsIniFileCommand = ReactiveCommand.Create(UpdateSettingsIniFile);
         UpdateLaunchIniFileCommand = ReactiveCommand.Create(UpdateLaunchIniFile);
@@ -46,6 +52,11 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     private void ClearDate()
     {
         LaunchDateStr = null;
+    }
+
+    private void ReplaceAnnouncementChangeAnswer(string param)
+    {
+        _replaceAnnouncementAnswer = param;
     }
 
     private void UpdateLaunchIniFile()
@@ -68,9 +79,16 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
         FileInfo launchFile = new FileInfo(_launchPath);
 
+        foreach (var item in _announcementsPathToRemove)
+        {
+            File.Delete(item);
+        }
+        
+        
         foreach (var item in _announcements)
         {
             FileInfo file = new(item.ImagePath);
+
             if (file.Directory!.ToString() != launchFile.Directory!.ToString())
             {
                 File.Copy(item.ImagePath, Path.Combine(launchFile.Directory.ToString(), item.Name));
@@ -172,7 +190,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         OpenFileDialog op = new OpenFileDialog();
 
         op.Title = "Выбрать конфигурационный файл";
-        op.Filters!.Add(new FileDialogFilter() { Name = "Ini Files", Extensions = { "ini" } });
+        op.Filters!.Add(new FileDialogFilter { Name = "Ini Files", Extensions = { "ini" } });
         op.AllowMultiple = false;
 
         var result = await op.ShowAsync(window);
@@ -199,19 +217,15 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
                 string[] subs = item.Split('|');
 
-                DateTime lastWriteTime;
-                DateTime actualStart;
-                DateTime actualEnd;
-
-                if (!DateTime.TryParse(subs[1], out lastWriteTime)
-                    || !DateTime.TryParse(subs[2], out actualStart)
-                    || !DateTime.TryParse(subs[3], out actualEnd))
+                if (!DateTime.TryParse(subs[1], out var lastWriteTime)
+                    || !DateTime.TryParse(subs[2], out var actualStart)
+                    || !DateTime.TryParse(subs[3], out var actualEnd))
                     continue;
 
                 _announcements.Add(new AnnouncementClass
                 {
                     Name = subs[0],
-                    ImagePath = Path.Combine(iniFile.Directory.ToString(), subs[0]),
+                    ImagePath = Path.Combine(iniFile.Directory!.ToString(), subs[0]),
                     LastWriteTime = lastWriteTime,
                     ActualStart = actualStart,
                     ActualEnd = actualEnd
@@ -260,7 +274,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             Displays.Remove(Displays.First(item => item.DisplayNum == display));
     }
 
-    private async void AddAnnouncement(Window window)
+    private async void AddAnnouncementOpenDialog(Window window)
     {
         OpenFileDialog op = new OpenFileDialog();
 
@@ -275,19 +289,85 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             foreach (var item in result)
             {
                 FileInfo imageFileInfo = new FileInfo(item);
-                if (imageFileInfo.Exists)
+                if (!imageFileInfo.Exists)
+                    continue;
+
+                if (_announcements.Any(it => it.Name == imageFileInfo.Name))
                 {
-                    Announcements.Add(new AnnouncementClass
+                    IsReplaceAnnouncementOpened = true;
+
+                    FileInfo launchFile = new FileInfo(_launchPath);
+
+                    OldAnnouncementImage = Path.Combine(launchFile.Directory!.ToString(),
+                        _announcements.First(i => i.Name == imageFileInfo.Name).Name);
+                    NewAnnouncementImage = item;
+
+                    ReplaceNewFileName = "";
+
+                    ReplaceFileName = imageFileInfo.Name;
+
+                    while (IsReplaceAnnouncementOpened)
                     {
-                        Name = imageFileInfo.Name,
-                        ImagePath = item,
-                        LastWriteTime = imageFileInfo.LastWriteTime
-                    });
+                        await Task.Delay(200);
+                        switch (_replaceAnnouncementAnswer)
+                        {
+                            case "replace":
+                                IsReplaceAnnouncementOpened = false;
+                                _replaceAnnouncementAnswer = "none";
+
+                                try
+                                {
+                                    _announcementsPathToRemove.Add(Path.Combine(launchFile.Directory.ToString(), imageFileInfo.Name));
+                                    
+                                    Announcements.Remove(Announcements.First(item => item.Name == imageFileInfo.Name));
+                                    
+                                    AddAnnouncement(imageFileInfo.Name, item, imageFileInfo.LastWriteTime);
+                                }
+                                catch (Exception e)
+                                {
+                                    new InfoWindow("Error while removing announcement: " + e.Message).Show();
+                                }
+
+                                break;
+                            case "rename":
+                                FileInfo newFile = new FileInfo(Path.Combine(launchFile.Directory.ToString(),_replaceNewFileName+imageFileInfo.Extension));
+                                if (newFile.Exists)
+                                {
+                                    _replaceAnnouncementAnswer = "none";
+                                    ReplaceNewFileName = "";
+                                    break;
+                                }
+                                
+                                IsReplaceAnnouncementOpened = false;
+                                _replaceAnnouncementAnswer = "none";
+                                AddAnnouncement(_replaceNewFileName + imageFileInfo.Extension, item,
+                                    imageFileInfo.LastWriteTime);
+                                break;
+                            case "skip":
+                                IsReplaceAnnouncementOpened = false;
+                                _replaceAnnouncementAnswer = "none";
+                                break;
+                        }
+                    }
+                }
+                else
+                {
+                    AddAnnouncement(imageFileInfo.Name, item, imageFileInfo.LastWriteTime);
                 }
             }
         }
 
         OnPropertyChanged(nameof(AnnouncementCountContent));
+    }
+
+    private void AddAnnouncement(string name, string path, DateTime lastWrite)
+    {
+        Announcements.Add(new AnnouncementClass
+        {
+            Name = name,
+            ImagePath = path,
+            LastWriteTime = lastWrite
+        });
     }
 
     private void RemoveAnnouncement()
@@ -299,13 +379,16 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         {
             Announcements.Remove(announcement);
             OnPropertyChanged(nameof(AnnouncementCountContent));
-            new InfoWindow($"Обьявление {announcement.Name} удалено.").Show();
         }
         catch (Exception e)
         {
             new InfoWindow("Error while removing announcement: " + e.Message).Show();
         }
     }
+
+    private List<string> _announcementsPathToRemove = new();
+
+    private string _replaceAnnouncementAnswer = "none";
 
     public string AnnouncementCountContent => $"Обьявлений : {_announcements.Count}";
 
@@ -319,6 +402,66 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             _selectedMode = value;
             OnPropertyChanged();
             ModeChanged();
+        }
+    }
+
+    private string _oldAnnouncementImage;
+
+    public string OldAnnouncementImage
+    {
+        get => _oldAnnouncementImage;
+        set
+        {
+            _oldAnnouncementImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string _newAnnouncementImage;
+
+    public string NewAnnouncementImage
+    {
+        get => _newAnnouncementImage;
+        set
+        {
+            _newAnnouncementImage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string _replaceFileName;
+
+    public string ReplaceFileName
+    {
+        get => _replaceFileName;
+        set
+        {
+            _replaceFileName = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string _replaceNewFileName;
+
+    public string ReplaceNewFileName
+    {
+        get => _replaceNewFileName;
+        set
+        {
+            _replaceNewFileName = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private bool _isReplaceAnnouncementOpened;
+
+    public bool IsReplaceAnnouncementOpened
+    {
+        get => _isReplaceAnnouncementOpened;
+        set
+        {
+            _isReplaceAnnouncementOpened = value;
+            OnPropertyChanged();
         }
     }
 
@@ -431,8 +574,8 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
-    
-    private bool _isBlackout = false;
+
+    private bool _isBlackout;
 
     public bool IsBlackout
     {
@@ -467,7 +610,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
-    
+
     private string _activityStart = "09:00:00";
 
     public string ActivityStart
@@ -479,7 +622,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
-    
+
     private string _activityEnd = "21:00:00";
 
     public string ActivityEnd
