@@ -38,10 +38,11 @@
                 </Label.RenderTransform>
             </Label>
         </Grid>
-        <Image Name="MainImage"
-               DockPanel.Dock="Right"
-               Classes="st"
-               Stretch="Fill">
+        <Grid DockPanel.Dock="Right"
+              Background="gray">
+            <Image Name="MainImage"
+                   Stretch="Fill">
             </Image>
+        </Grid>
     </DockPanel>
 </Window>

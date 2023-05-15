@@ -100,13 +100,24 @@ namespace PopUpWindow
         {
             while (true)
             {
-                GetAllPictures();
-                if (_imagesPaths.Count == 0)
-                    await Task.Delay(1800 * 1000);
-                foreach (var item in _imagesPaths)
+                if (MainSettings.IsBlackoutMode)
                 {
-                    MainImage.Source = new Bitmap(item);
-                    await Task.Delay(_settings.Rate * 1000);
+                    TimeOnly timeNow = TimeOnly.Parse(DateTime.Now.ToString("HH:mm"));
+                    if (timeNow > MainSettings.BlackoutStart && timeNow < MainSettings.BlackoutEnd)
+                        MainImage.Source = null;
+                    await Task.Delay(300 * 1000);
+                }
+                else
+                {
+                    GetAllPictures();
+                    if (_imagesPaths.Count == 0)
+                        await Task.Delay(1800 * 1000);
+                
+                    foreach (var item in _imagesPaths)
+                    {
+                        MainImage.Source = new Bitmap(item);
+                        await Task.Delay(_settings.Rate * 1000);
+                    }
                 }
             }
         }

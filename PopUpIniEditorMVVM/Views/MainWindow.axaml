@@ -59,7 +59,8 @@
                                            Margin="0,3,0,0"
                                            Foreground="darkgray" />
                                 </StackPanel>
-                                <StackPanel IsVisible="{Binding IsFirstModeStackPanelVisible}">
+                                <StackPanel IsVisible="{Binding IsFirstModeStackPanelVisible}"
+                                            Spacing="3">
                                     <Label Content="Директория с файлами" Name="DirLabel" />
                                     <Grid Width="{Binding Width, ElementName=DirLabel}">
                                         <TextBox Text="{Binding Directory}" />
@@ -75,7 +76,8 @@
                                         <TimePicker SelectedTime="{Binding ActivityEnd}" />
                                     </StackPanel>
                                 </StackPanel>
-                                <StackPanel IsVisible="{Binding IsSecondModeStackPanelVisible}">
+                                <StackPanel IsVisible="{Binding IsSecondModeStackPanelVisible}"
+                                            Spacing="3">
 
                                     <CheckBox IsChecked="{Binding IsBlackout}"
                                               Content="Затемнение экрана" />
