@@ -347,9 +347,6 @@
                         </Button>
                     </Grid>
                 </ScrollViewer>
-                <Image >
-                    
-                </Image>
                 <Grid IsVisible="{Binding IsReplaceAnnouncementOpened}"
                       Background="transparent">
                     <Border Grid.RowSpan="3"
