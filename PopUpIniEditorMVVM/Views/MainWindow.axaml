@@ -354,7 +354,7 @@
                     <Border Grid.RowSpan="3"
                             CornerRadius="15"
                             Background="#ebebe8"
-                            Margin="25,15,25,25"
+                            Width="650" Height="350"
                             MaxHeight="{Binding $parent[Grid].Bounds.Height}"
                             BorderBrush="black"
                             BorderThickness="1">

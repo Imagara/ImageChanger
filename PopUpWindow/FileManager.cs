@@ -8,17 +8,14 @@ namespace PopUpWindow
 {
     public class FileManager
     {
-        //Поля класса
         private readonly string _path; //Для хранения пути к INI-файлу
         private readonly Logger _logger = new();
 
-        private static readonly Regex IniSectionLineMatcher = new Regex(
-            @"^([A-Za-z]+=)|([[0-9A-Za-z]+])",
-            RegexOptions.Compiled);
+        private static readonly Regex IniSectionLineMatcher =
+            new(@"^([A-Za-z]+=)|([[0-9A-Za-z]+])", RegexOptions.Compiled);
 
-        private static readonly Regex IniLineMatcher = new Regex(
-            @"^[A-Za-z]+=",
-            RegexOptions.Compiled);
+        private static readonly Regex IniLineMatcher =
+            new(@"^[A-Za-z]+=", RegexOptions.Compiled);
 
         //Конструктор, принимающий путь к INI-файлу
         public FileManager(string aPath)
@@ -133,6 +130,7 @@ namespace PopUpWindow
                 return false;
             }
         }
+
         public void WriteHistoryString(string fileName, DateTime creationTime)
         {
             try
@@ -140,7 +138,7 @@ namespace PopUpWindow
                 FileInfo fileInfo = new FileInfo(_path);
                 if (fileInfo.Exists)
                 {
-                    using(StreamWriter writer = new StreamWriter(_path, true))
+                    using (StreamWriter writer = new StreamWriter(_path, true))
                     {
                         writer.WriteLine($"{fileName}|{creationTime}");
                     }
@@ -151,6 +149,5 @@ namespace PopUpWindow
                 _logger.CreateLog($"Error while writing file({_path}): {ex.Message}");
             }
         }
-
     }
 }

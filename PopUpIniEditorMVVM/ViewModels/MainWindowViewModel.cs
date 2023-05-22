@@ -7,12 +7,10 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices.JavaScript;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Avalonia.Controls;
-using Avalonia.Input;
-using Avalonia.Media.Imaging;
 using PopUpIniEditorMVVM.Views;
 using ReactiveUI;
 
@@ -20,6 +18,8 @@ namespace PopUpIniEditorMVVM.ViewModels;
 
 public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {
+    private static Encoding UTF8NoBOM => new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+    
     // Event to signal ViewModel property changes to the View and update the UI display
     public event PropertyChangedEventHandler PropertyChanged;
 
@@ -65,25 +65,20 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
         List<string> strs = new();
 
-        if (dt != DateTime.MinValue)
-            strs.Add($"time=" + dt.ToShortDateString() + " " + _launchTime);
-        else
-            strs.Add($"time=" + _launchTime);
-
-        strs.Add($"autodelete={_launchAutoDeleteFile}\n");
-
+        strs.Add($"time={(dt != DateTime.MinValue ? dt.ToShortDateString() + " " + _launchTime : _launchTime)}" +
+                 $"autodelete={_launchAutoDeleteFile}\n");
+        
         strs.AddRange(_announcements
             .Select(item => $"{item.Name}|{item.LastWriteTime}|{item.ActualStart}|{item.ActualEnd}").ToList());
 
-        File.WriteAllLines(_launchPath, strs);
-
-        FileInfo launchFile = new FileInfo(_launchPath);
+        File.WriteAllLines(_launchPath, strs, UTF8NoBOM);
 
         foreach (var item in _announcementsPathToRemove)
         {
             File.Delete(item);
         }
         
+        FileInfo launchFile = new FileInfo(_launchPath);
         
         foreach (var item in _announcements)
         {
@@ -132,7 +127,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             }
 
             // Write the updated settings.ini file
-            File.WriteAllLines("settings.ini", strs);
+            File.WriteAllLines("settings.ini", strs, UTF8NoBOM);
             if (Environment.OSVersion.Platform.ToString() != "Unix")
                 SelectUpdatedFile();
             new InfoWindow($"Сохранено.").Show();
