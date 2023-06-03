@@ -10,6 +10,8 @@ public class PathToBitmapConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         string path = (string)value;
+        if (path == null)
+            return null;
         return new Bitmap(path);
     }
 

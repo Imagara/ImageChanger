@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using PopUpIniEditorMVVM.Views;
 using ReactiveUI;
@@ -18,13 +19,15 @@ namespace PopUpIniEditorMVVM.ViewModels;
 
 public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {
-    private static Encoding UTF8NoBOM => new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+    private static Encoding UTF8NoBOM =>
+        new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+
+    private static List<Window> Windows { get; set; } = new ();
     
     // Event to signal ViewModel property changes to the View and update the UI display
     public event PropertyChangedEventHandler PropertyChanged;
 
     public ReactiveCommand<string, Unit> ReplaceAnnouncementCommand { get; }
-    public ReactiveCommand<Unit, Unit> ClearDateCommand { get; }
     public ReactiveCommand<Unit, Unit> AddDisplayCommand { get; }
     public ReactiveCommand<Unit, Unit> RemoveDisplayCommand { get; }
     public ReactiveCommand<Window, Unit> AddAnnouncementCommand { get; }
@@ -33,12 +36,13 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     public ReactiveCommand<Unit, Unit> UpdateLaunchIniFileCommand { get; }
     public ReactiveCommand<Window, Unit> DirectorySelectCommand { get; }
     public ReactiveCommand<Window, Unit> LaunchSelectCommand { get; }
+    public ReactiveCommand<Window, Unit> LaunchSelectDirectoryCommand { get; }
+    public ReactiveCommand<Unit, Unit> OpenScreenDefinitionHelpWindowsCommand { get; }
 
     // Constructor creating each user command and associated action
     public MainWindowViewModel()
     {
         ReplaceAnnouncementCommand = ReactiveCommand.Create<string>(ReplaceAnnouncementChangeAnswer);
-        ClearDateCommand = ReactiveCommand.Create(ClearDate);
         AddDisplayCommand = ReactiveCommand.Create(AddDisplay);
         RemoveDisplayCommand = ReactiveCommand.Create(RemoveDisplay);
         AddAnnouncementCommand = ReactiveCommand.Create<Window>(AddAnnouncementOpenDialog);
@@ -47,11 +51,8 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         UpdateLaunchIniFileCommand = ReactiveCommand.Create(UpdateLaunchIniFile);
         DirectorySelectCommand = ReactiveCommand.Create<Window>(DirectorySelect);
         LaunchSelectCommand = ReactiveCommand.Create<Window>(LaunchSelect);
-    }
-
-    private void ClearDate()
-    {
-        LaunchDateStr = null;
+        LaunchSelectDirectoryCommand = ReactiveCommand.Create<Window>(LaunchDirectorySelect);
+        OpenScreenDefinitionHelpWindowsCommand = ReactiveCommand.Create(OpenScreenDefinitionHelpWindows);
     }
 
     private void ReplaceAnnouncementChangeAnswer(string param)
@@ -67,7 +68,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
         strs.Add($"time={(dt != DateTime.MinValue ? dt.ToShortDateString() + " " + _launchTime : _launchTime)}" +
                  $"autodelete={_launchAutoDeleteFile}\n");
-        
+
         strs.AddRange(_announcements
             .Select(item => $"{item.Name}|{item.LastWriteTime}|{item.ActualStart}|{item.ActualEnd}").ToList());
 
@@ -77,9 +78,9 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         {
             File.Delete(item);
         }
-        
+
         FileInfo launchFile = new FileInfo(_launchPath);
-        
+
         foreach (var item in _announcements)
         {
             FileInfo file = new(item.ImagePath);
@@ -89,8 +90,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 File.Copy(item.ImagePath, Path.Combine(launchFile.Directory.ToString(), item.Name));
             }
         }
-
-        new InfoWindow($"Сохранено.").Show();
+        ShowInfoMessage("Сохранено.", "success");
     }
 
     // Method to write out changes made to settings.ini
@@ -130,21 +130,30 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             File.WriteAllLines("settings.ini", strs, UTF8NoBOM);
             if (Environment.OSVersion.Platform.ToString() != "Unix")
                 SelectUpdatedFile();
-            new InfoWindow($"Сохранено.").Show();
+            
+            ShowInfoMessage("Сохранено.", "success");
         }
     }
 
     private void SelectUpdatedFile()
     {
-        Process PrFolder = new Process();
-        ProcessStartInfo psi = new ProcessStartInfo();
-        string file = Path.Combine(Environment.CurrentDirectory, "settings.ini");
-        psi.CreateNoWindow = true;
-        psi.WindowStyle = ProcessWindowStyle.Normal;
-        psi.FileName = "explorer";
-        psi.Arguments = @"/n, /select, " + file;
-        PrFolder.StartInfo = psi;
-        PrFolder.Start();
+        try
+        {
+            Process PrFolder = new Process();
+            ProcessStartInfo psi = new ProcessStartInfo();
+            string file = Path.Combine(Environment.CurrentDirectory, "settings.ini");
+            psi.CreateNoWindow = true;
+            psi.WindowStyle = ProcessWindowStyle.Normal;
+            psi.FileName = "explorer";
+            psi.Arguments = @"/n, /select, " + file;
+            PrFolder.StartInfo = psi;
+            PrFolder.Start();
+        }
+        catch (Exception e)
+        {
+            ShowInfoMessage("Ошибка при открытии папки: " + e.Message, "danger");
+        }
+        
     }
 
     private void ModeChanged()
@@ -167,6 +176,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         else
         {
             Displays.Clear();
+            Displays.Add(new DisplayClass { DisplayNum = 1, IsModeTwo = true });
         }
     }
 
@@ -193,14 +203,26 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             LaunchPath = result.First();
     }
 
+    private async void LaunchDirectorySelect(Window window)
+    {
+        OpenFolderDialog ofd = new OpenFolderDialog();
+        ofd.Title = "Select folder";
+        var result = await ofd.ShowAsync(window);
+        if (result != null)
+            LaunchPath = Path.Combine(result, "launch.ini");
+    }
+
     private void ImportAnnouncements(string path)
     {
         FileInfo iniFile = new FileInfo(path);
+
+        _announcements.Clear();
+        OnPropertyChanged(nameof(AnnouncementCountContent));
+
         if (iniFile.Exists && iniFile.Extension == ".ini")
         {
             var announcementsStrs = File.ReadLines(iniFile.FullName).ToList();
 
-            _announcements.Clear();
             foreach (var item in announcementsStrs)
             {
                 Regex announcementRegex = new Regex(
@@ -269,6 +291,53 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             Displays.Remove(Displays.First(item => item.DisplayNum == display));
     }
 
+    private void OpenScreenDefinitionHelpWindows()
+    {
+        new ScreenHelper(); //temporaly
+        
+        int index = 1;
+        
+        foreach (var item in ScreenHelper.AllScreens)
+        {
+            var xPos = item.Bounds.Position.X;
+            
+            ScreenDefinitionHelpWindow window = new ScreenDefinitionHelpWindow(index)
+            {
+                Position = new PixelPoint(xPos, item.Bounds.Y)
+            };
+            
+            Windows.Add(window);
+            
+            window.Show(); 
+            
+            index++;
+        }
+
+        CloseScreenDefinitionHelpWindows();
+    }
+
+    private async void CloseScreenDefinitionHelpWindows()
+    {
+        await Task.Delay(3000);
+        foreach (var item in Windows)
+        {
+            item.Close();
+        }
+    }
+
+    private string GetHexCode(string value)
+    {
+        string str = value;
+        if (str.Length < 6
+            || (str.Length == 6 && str[0] == '#')
+            || (str.Length == 7 && str[0] != '#')
+            || str.Length > 7)
+            return "#000000";
+        if (str[0] != '#')
+            str = '#' + str;
+        return str;
+    }
+
     private async void AddAnnouncementOpenDialog(Window window)
     {
         OpenFileDialog op = new OpenFileDialog();
@@ -312,27 +381,29 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
                                 try
                                 {
-                                    _announcementsPathToRemove.Add(Path.Combine(launchFile.Directory.ToString(), imageFileInfo.Name));
-                                    
+                                    _announcementsPathToRemove.Add(Path.Combine(launchFile.Directory.ToString(),
+                                        imageFileInfo.Name));
+
                                     Announcements.Remove(Announcements.First(item => item.Name == imageFileInfo.Name));
-                                    
+
                                     AddAnnouncement(imageFileInfo.Name, item, imageFileInfo.LastWriteTime);
                                 }
                                 catch (Exception e)
                                 {
-                                    new InfoWindow("Error while removing announcement: " + e.Message).Show();
+                                    ShowInfoMessage("Ошибка во время замены объявления: " + e.Message, "danger");
                                 }
 
                                 break;
                             case "rename":
-                                FileInfo newFile = new FileInfo(Path.Combine(launchFile.Directory.ToString(),_replaceNewFileName+imageFileInfo.Extension));
+                                FileInfo newFile = new FileInfo(Path.Combine(launchFile.Directory.ToString(),
+                                    _replaceNewFileName + imageFileInfo.Extension));
                                 if (newFile.Exists)
                                 {
                                     _replaceAnnouncementAnswer = "none";
                                     ReplaceNewFileName = "";
                                     break;
                                 }
-                                
+
                                 IsReplaceAnnouncementOpened = false;
                                 _replaceAnnouncementAnswer = "none";
                                 AddAnnouncement(_replaceNewFileName + imageFileInfo.Extension, item,
@@ -377,7 +448,45 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
         catch (Exception e)
         {
-            new InfoWindow("Error while removing announcement: " + e.Message).Show();
+            ShowInfoMessage("Ошибка во время удаления объявления: " + e.Message, "danger");
+        }
+    }
+
+    private void ShowInfoMessage(string message, string type = "Primary")
+    {
+        string HexColor = "#000000";
+
+        type = type.ToLower();
+        
+        if (type == "primary")
+            HexColor = "#5bc0de";
+        if (type == "danger")
+            HexColor = "#bb2124";
+        else if (type == "success")
+            HexColor = "#22bb33";
+        else if (type == "warning")
+            HexColor = "#f0ad4e";
+
+        int id = _infoMessages.Select(item => item.id).DefaultIfEmpty(0).Max() + 1;
+        InfoMessages.Add(new InfoMessageClass()
+        {
+            id = id,
+            InfoMessage = message,
+            Color = HexColor
+        });
+        AutoDeleteInfoMessage(id);
+    }
+
+    private async void AutoDeleteInfoMessage(int infoMessageId)
+    {
+        try
+        {
+            await Task.Delay(3000);
+            InfoMessages.Remove(_infoMessages.First(item => item.id == infoMessageId));
+        }
+        catch (Exception ex)
+        {
+            //new exception
         }
     }
 
@@ -444,6 +553,18 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             _replaceNewFileName = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string _hexCodeColor = "#000000";
+
+    public string HexCodeColor
+    {
+        get => _hexCodeColor;
+        set
+        {
+            _hexCodeColor = GetHexCode(value);
             OnPropertyChanged();
         }
     }
@@ -554,6 +675,18 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             _announcements = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private ObservableCollection<InfoMessageClass> _infoMessages = new();
+
+    public ObservableCollection<InfoMessageClass> InfoMessages
+    {
+        get => _infoMessages;
+        set
+        {
+            _infoMessages = value;
             OnPropertyChanged();
         }
     }
@@ -677,6 +810,13 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         public string? DirectoryPath { get; set; }
         public int? Rate { get; set; } = 60;
         public bool? IsModeTwo { get; set; }
+    }
+
+    public class InfoMessageClass
+    {
+        public int id { get; set; }
+        public string InfoMessage { get; set; }
+        public string Color { get; set; }
     }
 
     public class AnnouncementClass
