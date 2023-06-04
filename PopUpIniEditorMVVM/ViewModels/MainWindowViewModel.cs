@@ -22,8 +22,8 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     private static Encoding UTF8NoBOM =>
         new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
-    private static List<Window> Windows { get; set; } = new ();
-    
+    private static List<Window> Windows { get; set; } = new();
+
     // Event to signal ViewModel property changes to the View and update the UI display
     public event PropertyChangedEventHandler PropertyChanged;
 
@@ -62,76 +62,97 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     private void UpdateLaunchIniFile()
     {
-        DateTime.TryParse(_launchDateStr, out var dt);
-
-        List<string> strs = new();
-
-        strs.Add($"time={(dt != DateTime.MinValue ? dt.ToShortDateString() + " " + _launchTime : _launchTime)}" +
-                 $"autodelete={_launchAutoDeleteFile}\n");
-
-        strs.AddRange(_announcements
-            .Select(item => $"{item.Name}|{item.LastWriteTime}|{item.ActualStart}|{item.ActualEnd}").ToList());
-
-        File.WriteAllLines(_launchPath, strs, UTF8NoBOM);
-
-        foreach (var item in _announcementsPathToRemove)
+        try
         {
-            File.Delete(item);
-        }
-
-        FileInfo launchFile = new FileInfo(_launchPath);
-
-        foreach (var item in _announcements)
-        {
-            FileInfo file = new(item.ImagePath);
-
-            if (file.Directory!.ToString() != launchFile.Directory!.ToString())
+            if (_launchPath == null)
             {
-                File.Copy(item.ImagePath, Path.Combine(launchFile.Directory.ToString(), item.Name));
+                ShowInfoMessage("Не выбран путь к конфигурационному файлу", "danger");
+                return;
             }
+            
+            DateTime.TryParse(_launchDateStr, out var dt);
+
+            List<string> strs = new();
+
+            strs.Add($"time={(dt != DateTime.MinValue ? dt.ToShortDateString() + " " + _launchTime : _launchTime)}" +
+                     $"autodelete={_launchAutoDeleteFile}\n");
+
+            strs.AddRange(_announcements
+                .Select(item => $"{item.Name}|{item.LastWriteTime}|{item.ActualStart}|{item.ActualEnd}").ToList());
+
+            File.WriteAllLines(_launchPath, strs, UTF8NoBOM);
+
+            foreach (var item in _announcementsPathToRemove)
+            {
+                File.Delete(item);
+            }
+
+            FileInfo launchFile = new FileInfo(_launchPath);
+
+            foreach (var item in _announcements)
+            {
+                FileInfo file = new(item.ImagePath);
+
+                if (file.Directory!.ToString() != launchFile.Directory!.ToString())
+                {
+                    File.Copy(item.ImagePath, Path.Combine(launchFile.Directory.ToString(), item.Name));
+                }
+            }
+
+            ShowInfoMessage("Сохранено.", "success");
         }
-        ShowInfoMessage("Сохранено.", "success");
+        catch (Exception e)
+        {
+            ShowInfoMessage("Ошибка при сохранении конфигурационного файла: " + e.Message, "danger");
+        }
     }
 
     // Method to write out changes made to settings.ini
     private void UpdateSettingsIniFile()
     {
-        if (_selectedMode is not Label modeLabel)
-            return;
-
-        int.TryParse(modeLabel.Content.ToString(), out var mode);
-
-        if (mode is 1 or 2)
+        try
         {
-            List<string> strs = new()
-            {
-                "[main]\n" +
-                $"mode={mode}"
-            };
-            if (mode is 1)
-            {
-                strs.Add($"directory={_directory}\n" +
-                         $"activitystart={_activityStart}\n" +
-                         $"activityend={_activityEnd}");
-            }
-            else
-            {
-                var screens = _displays.Select(item => item.DisplayNum).ToList();
-                strs.Add($"screens={string.Join("/", screens)}");
-                foreach (var display in _displays)
-                {
-                    strs.Add($"[display{display.DisplayNum}]\n" +
-                             $"directory={display.DirectoryPath}\n" +
-                             $"rate={display.Rate}\n");
-                }
-            }
+            if (_selectedMode is not Label modeLabel)
+                return;
 
-            // Write the updated settings.ini file
-            File.WriteAllLines("settings.ini", strs, UTF8NoBOM);
-            if (Environment.OSVersion.Platform.ToString() != "Unix")
-                SelectUpdatedFile();
-            
-            ShowInfoMessage("Сохранено.", "success");
+            int.TryParse(modeLabel.Content.ToString(), out var mode);
+
+            if (mode is 1 or 2)
+            {
+                List<string> strs = new()
+                {
+                    "[main]\n" +
+                    $"mode={mode}"
+                };
+                if (mode is 1)
+                {
+                    strs.Add($"directory={_directory}\n" +
+                             $"activitystart={_activityStart}\n" +
+                             $"activityend={_activityEnd}");
+                }
+                else
+                {
+                    var screens = _displays.Select(item => item.DisplayNum).ToList();
+                    strs.Add($"screens={string.Join("/", screens)}");
+                    foreach (var display in _displays)
+                    {
+                        strs.Add($"[display{display.DisplayNum}]\n" +
+                                 $"directory={display.DirectoryPath}\n" +
+                                 $"rate={display.Rate}\n");
+                    }
+                }
+
+                // Write the updated settings.ini file
+                File.WriteAllLines("settings.ini", strs, UTF8NoBOM);
+                if (Environment.OSVersion.Platform.ToString() != "Unix")
+                    SelectUpdatedFile();
+
+                ShowInfoMessage("Сохранено.", "success");
+            }
+        }
+        catch (Exception e)
+        {
+            ShowInfoMessage("Ошибка при сохранении конфигурационного файла: " + e.Message, "danger");
         }
     }
 
@@ -153,30 +174,36 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         {
             ShowInfoMessage("Ошибка при открытии папки: " + e.Message, "danger");
         }
-        
     }
 
     private void ModeChanged()
     {
-        if (_selectedMode is not Label modeLabel)
-            return;
-
-        bool isFirstMode = modeLabel.Content.ToString() == "1";
-
-        ModeHint = isFirstMode ? "Отображает доступные объявления на экран" : "Циклично показывает изображения";
-
-        IsFirstModeStackPanelVisible = isFirstMode;
-        IsSecondModeStackPanelVisible = !isFirstMode;
-
-        if (isFirstMode)
+        try
         {
-            Displays.Clear();
-            Displays.Add(new DisplayClass { DisplayNum = 1, IsModeTwo = false });
+            if (_selectedMode is not Label modeLabel)
+                return;
+
+            bool isFirstMode = modeLabel.Content.ToString() == "1";
+
+            ModeHint = isFirstMode ? "Отображает доступные объявления на экран" : "Циклично показывает изображения";
+
+            IsFirstModeStackPanelVisible = isFirstMode;
+            IsSecondModeStackPanelVisible = !isFirstMode;
+
+            if (isFirstMode)
+            {
+                Displays.Clear();
+                Displays.Add(new DisplayClass { DisplayNum = 1, IsModeTwo = false });
+            }
+            else
+            {
+                Displays.Clear();
+                Displays.Add(new DisplayClass { DisplayNum = 1, IsModeTwo = true });
+            }
         }
-        else
+        catch (Exception e)
         {
-            Displays.Clear();
-            Displays.Add(new DisplayClass { DisplayNum = 1, IsModeTwo = true });
+            ShowInfoMessage("Ошибка при выборе режима работы программы: " + e.Message, "danger");
         }
     }
 
@@ -214,106 +241,134 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     private void ImportAnnouncements(string path)
     {
-        FileInfo iniFile = new FileInfo(path);
-
-        _announcements.Clear();
-        OnPropertyChanged(nameof(AnnouncementCountContent));
-
-        if (iniFile.Exists && iniFile.Extension == ".ini")
+        try
         {
-            var announcementsStrs = File.ReadLines(iniFile.FullName).ToList();
+            FileInfo iniFile = new FileInfo(path);
 
-            foreach (var item in announcementsStrs)
-            {
-                Regex announcementRegex = new Regex(
-                    @"^[A-Za-zА-Яа-я0-9.() —:\\/-]{4,128}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}",
-                    RegexOptions.Compiled);
-
-                if (!announcementRegex.IsMatch(item))
-                    continue;
-
-                string[] subs = item.Split('|');
-
-                if (!DateTime.TryParse(subs[1], out var lastWriteTime)
-                    || !DateTime.TryParse(subs[2], out var actualStart)
-                    || !DateTime.TryParse(subs[3], out var actualEnd))
-                    continue;
-
-                _announcements.Add(new AnnouncementClass
-                {
-                    Name = subs[0],
-                    ImagePath = Path.Combine(iniFile.Directory!.ToString(), subs[0]),
-                    LastWriteTime = lastWriteTime,
-                    ActualStart = actualStart,
-                    ActualEnd = actualEnd
-                });
-            }
-
-            var timeLine = announcementsStrs.FirstOrDefault(s => s.StartsWith("time="));
-            if (timeLine != null)
-            {
-                DateTime.TryParse(timeLine.Substring("time=".Length), out var dt);
-                LaunchDateStr = dt.ToShortDateString();
-                LaunchTimeStr = dt.ToShortTimeString();
-            }
-
-            var autoDeleteLine = announcementsStrs.FirstOrDefault(s => s.StartsWith("autodelete="));
-            if (autoDeleteLine != null)
-            {
-                bool.TryParse(autoDeleteLine.Substring("autodelete=".Length), out var autoDeleteFiles);
-                LaunchAutoDeleteFile = autoDeleteFiles;
-            }
-
+            _announcements.Clear();
             OnPropertyChanged(nameof(AnnouncementCountContent));
+
+            if (iniFile.Exists && iniFile.Extension == ".ini")
+            {
+                var announcementsStrs = File.ReadLines(iniFile.FullName).ToList();
+
+                foreach (var item in announcementsStrs)
+                {
+                    Regex announcementRegex = new Regex(
+                        @"^[A-Za-zА-Яа-я0-9.() —:\\/-]{4,128}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}[|][0-9.:\s]{10,19}",
+                        RegexOptions.Compiled);
+
+                    if (!announcementRegex.IsMatch(item))
+                        continue;
+
+                    string[] subs = item.Split('|');
+
+                    if (!DateTime.TryParse(subs[1], out var lastWriteTime)
+                        || !DateTime.TryParse(subs[2], out var actualStart)
+                        || !DateTime.TryParse(subs[3], out var actualEnd))
+                        continue;
+
+                    _announcements.Add(new AnnouncementClass
+                    {
+                        Name = subs[0],
+                        ImagePath = Path.Combine(iniFile.Directory!.ToString(), subs[0]),
+                        LastWriteTime = lastWriteTime,
+                        ActualStart = actualStart,
+                        ActualEnd = actualEnd
+                    });
+                }
+
+                var timeLine = announcementsStrs.FirstOrDefault(s => s.StartsWith("time="));
+                if (timeLine != null)
+                {
+                    DateTime.TryParse(timeLine.Substring("time=".Length), out var dt);
+                    LaunchDateStr = dt.ToShortDateString();
+                    LaunchTimeStr = dt.ToShortTimeString();
+                }
+
+                var autoDeleteLine = announcementsStrs.FirstOrDefault(s => s.StartsWith("autodelete="));
+                if (autoDeleteLine != null)
+                {
+                    bool.TryParse(autoDeleteLine.Substring("autodelete=".Length), out var autoDeleteFiles);
+                    LaunchAutoDeleteFile = autoDeleteFiles;
+                }
+
+                OnPropertyChanged(nameof(AnnouncementCountContent));
+            }
+            else if (iniFile.Extension == ".ini")
+                _launchPath = iniFile.FullName;
         }
-        else if (iniFile.Extension == ".ini")
-            _launchPath = iniFile.FullName;
+        catch (Exception e)
+        {
+            ShowInfoMessage("Ошибка при импорте объявлений: " + e.Message, "danger");
+        }
     }
 
     private void AddDisplay()
     {
-        int.TryParse(SelectedDisplayContent, out var displayNum);
-
-        if (displayNum > 0 && Displays.All(item => item.DisplayNum != displayNum))
+        try
         {
-            Displays.Add(new DisplayClass
+            int.TryParse(SelectedDisplayContent, out var displayNum);
+
+            if (displayNum > 0 && Displays.All(item => item.DisplayNum != displayNum))
             {
-                DisplayNum = displayNum
-            });
+                Displays.Add(new DisplayClass
+                {
+                    DisplayNum = displayNum
+                });
+            }
+        }
+        catch (Exception e)
+        {
+            ShowInfoMessage("Ошибка при добавлении экрана для вывода: " + e.Message, "danger");
         }
     }
 
     private void RemoveDisplay()
     {
-        int.TryParse(SelectedDisplayContent, out var display);
+        try
+        {
+            int.TryParse(SelectedDisplayContent, out var display);
 
-        if (Displays.Any(item => item.DisplayNum == display))
-            Displays.Remove(Displays.First(item => item.DisplayNum == display));
+            if (Displays.Any(item => item.DisplayNum == display))
+                Displays.Remove(Displays.First(item => item.DisplayNum == display));
+        }
+        catch (Exception e)
+        {
+            ShowInfoMessage("Ошибка при удалении: " + e.Message, "danger");
+        }
     }
 
     private void OpenScreenDefinitionHelpWindows()
     {
-        new ScreenHelper(); //temporaly
-        
-        int index = 1;
-        
-        foreach (var item in ScreenHelper.AllScreens)
+        try
         {
-            var xPos = item.Bounds.Position.X;
-            
-            ScreenDefinitionHelpWindow window = new ScreenDefinitionHelpWindow(index)
-            {
-                Position = new PixelPoint(xPos, item.Bounds.Y)
-            };
-            
-            Windows.Add(window);
-            
-            window.Show(); 
-            
-            index++;
-        }
+            new ScreenHelper(); //temporaly
 
-        CloseScreenDefinitionHelpWindows();
+            int index = 1;
+
+            foreach (var item in ScreenHelper.AllScreens)
+            {
+                var xPos = item.Bounds.Position.X;
+
+                ScreenDefinitionHelpWindow window = new ScreenDefinitionHelpWindow(index)
+                {
+                    Position = new PixelPoint(xPos, item.Bounds.Y)
+                };
+
+                Windows.Add(window);
+
+                window.Show();
+
+                index++;
+            }
+
+            CloseScreenDefinitionHelpWindows();
+        }
+        catch (Exception e)
+        {
+            ShowInfoMessage("Ошибка при открытии окон: " + e.Message, "danger");
+        }
     }
 
     private async void CloseScreenDefinitionHelpWindows()
@@ -340,6 +395,12 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     private async void AddAnnouncementOpenDialog(Window window)
     {
+        if (_launchPath == null)
+        {
+            ShowInfoMessage("Выберите путь к конфигурационному файлу", "danger");
+            return;
+        }
+        
         OpenFileDialog op = new OpenFileDialog();
 
         op.Title = "Выбрать обьявление";
@@ -349,6 +410,16 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
         var result = await op.ShowAsync(window);
         if (result != null)
+        {
+            AddAnnouncementsFromResult(result);
+        }
+
+        OnPropertyChanged(nameof(AnnouncementCountContent));
+    }
+
+    private async void AddAnnouncementsFromResult(string[] result)
+    {
+        try
         {
             foreach (var item in result)
             {
@@ -387,6 +458,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                                     Announcements.Remove(Announcements.First(item => item.Name == imageFileInfo.Name));
 
                                     AddAnnouncement(imageFileInfo.Name, item, imageFileInfo.LastWriteTime);
+                                    ShowInfoMessage("Заменено.", "success");
                                 }
                                 catch (Exception e)
                                 {
@@ -422,18 +494,27 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 }
             }
         }
-
-        OnPropertyChanged(nameof(AnnouncementCountContent));
+        catch (Exception e)
+        {
+            ShowInfoMessage("Ошибка при добавлении выбранных объявлений: " + e.Message, "danger");
+        }
     }
 
     private void AddAnnouncement(string name, string path, DateTime lastWrite)
     {
-        Announcements.Add(new AnnouncementClass
+        try
         {
-            Name = name,
-            ImagePath = path,
-            LastWriteTime = lastWrite
-        });
+            Announcements.Add(new AnnouncementClass
+            {
+                Name = name,
+                ImagePath = path,
+                LastWriteTime = lastWrite
+            });
+        }
+        catch (Exception e)
+        {
+            ShowInfoMessage("Ошибка при добавлении объявления в список: " + e.Message, "danger");
+        }
     }
 
     private void RemoveAnnouncement()
@@ -457,7 +538,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         string HexColor = "#000000";
 
         type = type.ToLower();
-        
+
         if (type == "primary")
             HexColor = "#5bc0de";
         if (type == "danger")
@@ -484,9 +565,9 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             await Task.Delay(3000);
             InfoMessages.Remove(_infoMessages.First(item => item.id == infoMessageId));
         }
-        catch (Exception ex)
+        catch
         {
-            //new exception
+            //
         }
     }
 
