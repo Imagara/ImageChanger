@@ -70,12 +70,9 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 return;
             }
             
-            DateTime.TryParse(_launchDateStr, out var dt);
-
             List<string> strs = new();
 
-            strs.Add($"time={(dt != DateTime.MinValue ? dt.ToShortDateString() + " " + _launchTime : _launchTime)}" +
-                     $"autodelete={_launchAutoDeleteFile}\n");
+            strs.Add($"autodelete={_launchAutoDeleteFile}\n");
 
             strs.AddRange(_announcements
                 .Select(item => $"{item.Name}|{item.LastWriteTime}|{item.ActualStart}|{item.ActualEnd}").ToList());
@@ -133,7 +130,11 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 else
                 {
                     var screens = _displays.Select(item => item.DisplayNum).ToList();
-                    strs.Add($"screens={string.Join("/", screens)}");
+                    strs.Add($"isblackout={_isBlackout}\n" +
+                             $"blackoutstart={_blackoutStart}\n" +
+                             $"blackoutend={_blackoutEnd}\n" +
+                             $"background={_hexCodeColor}\n" +
+                             $"screens={string.Join("/", screens)}\n");
                     foreach (var display in _displays)
                     {
                         strs.Add($"[display{display.DisplayNum}]\n" +
@@ -277,15 +278,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                         ActualEnd = actualEnd
                     });
                 }
-
-                var timeLine = announcementsStrs.FirstOrDefault(s => s.StartsWith("time="));
-                if (timeLine != null)
-                {
-                    DateTime.TryParse(timeLine.Substring("time=".Length), out var dt);
-                    LaunchDateStr = dt.ToShortDateString();
-                    LaunchTimeStr = dt.ToShortTimeString();
-                }
-
+                
                 var autoDeleteLine = announcementsStrs.FirstOrDefault(s => s.StartsWith("autodelete="));
                 if (autoDeleteLine != null)
                 {
@@ -796,30 +789,6 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    private string _launchDateStr;
-
-    public string LaunchDateStr
-    {
-        get => _launchDateStr;
-        set
-        {
-            _launchDateStr = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private string _launchTime = "09:00:00";
-
-    public string LaunchTimeStr
-    {
-        get => _launchTime;
-        set
-        {
-            _launchTime = value;
-            OnPropertyChanged();
-        }
-    }
-
     private string _activityStart = "09:00:00";
 
     public string ActivityStart
@@ -840,6 +809,30 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         set
         {
             _activityEnd = value;
+            OnPropertyChanged();
+        }
+    }
+    
+    private string _blackoutStart = "22:00:00";
+
+    public string BlackoutStart
+    {
+        get => _blackoutStart;
+        set
+        {
+            _blackoutStart = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string _blackoutEnd = "6:00:00";
+
+    public string BlackoutEnd
+    {
+        get => _blackoutEnd;
+        set
+        {
+            _blackoutEnd = value;
             OnPropertyChanged();
         }
     }
