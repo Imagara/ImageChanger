@@ -69,7 +69,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 ShowInfoMessage("Не выбран путь к конфигурационному файлу", "danger");
                 return;
             }
-            
+
             List<string> strs = new();
 
             strs.Add($"autodelete={_launchAutoDeleteFile}\n");
@@ -84,23 +84,31 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 File.Delete(item);
             }
 
-            FileInfo launchFile = new FileInfo(_launchPath);
-
-            foreach (var item in _announcements)
-            {
-                FileInfo file = new(item.ImagePath);
-
-                if (file.Directory!.ToString() != launchFile.Directory!.ToString())
-                {
-                    File.Copy(item.ImagePath, Path.Combine(launchFile.Directory.ToString(), item.Name));
-                }
-            }
+            CopyFiles();
 
             ShowInfoMessage("Сохранено.", "success");
         }
         catch (Exception e)
         {
             ShowInfoMessage("Ошибка при сохранении конфигурационного файла: " + e.Message, "danger");
+        }
+    }
+
+    private void CopyFiles()
+    {
+        try
+        {
+            foreach (var item in _fileToCopy)
+            {
+                File.Copy(item.oldPath, item.newPath);
+                //_fileToCopy.Remove(_fileToCopy.Where(it => it.oldPath == item.oldPath).FirstOrDefault());
+            }
+
+            _fileToCopy.Clear();
+        }
+        catch (Exception e)
+        {
+            ShowInfoMessage("Ошибка при копировании файла: " + e.Message, "danger");
         }
     }
 
@@ -267,7 +275,10 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                     if (!DateTime.TryParse(subs[1], out var lastWriteTime)
                         || !DateTime.TryParse(subs[2], out var actualStart)
                         || !DateTime.TryParse(subs[3], out var actualEnd))
+                    {
+                        ShowInfoMessage("Ошибка получения дат при импорте объявлений", "danger");
                         continue;
+                    }
 
                     _announcements.Add(new AnnouncementClass
                     {
@@ -278,7 +289,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                         ActualEnd = actualEnd
                     });
                 }
-                
+
                 var autoDeleteLine = announcementsStrs.FirstOrDefault(s => s.StartsWith("autodelete="));
                 if (autoDeleteLine != null)
                 {
@@ -393,10 +404,12 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             ShowInfoMessage("Выберите путь к конфигурационному файлу", "danger");
             return;
         }
-        
-        OpenFileDialog op = new OpenFileDialog();
 
-        op.Title = "Выбрать обьявление";
+        OpenFileDialog op = new OpenFileDialog
+        {
+            Title = "Выбрать обьявление"
+        };
+
         op.Filters!.Add(new FileDialogFilter
             { Name = "Изображения", Extensions = { "png", "jpeg", "jpg" } });
         op.AllowMultiple = true;
@@ -433,7 +446,6 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                     ReplaceNewFileName = "";
 
                     ReplaceFileName = imageFileInfo.Name;
-
                     while (IsReplaceAnnouncementOpened)
                     {
                         await Task.Delay(200);
@@ -460,20 +472,39 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
                                 break;
                             case "rename":
-                                FileInfo newFile = new FileInfo(Path.Combine(launchFile.Directory.ToString(),
-                                    _replaceNewFileName + imageFileInfo.Extension));
-                                if (newFile.Exists)
+                                try
                                 {
+                                    if (_replaceNewFileName.Length > 128)
+                                    {
+                                        _replaceAnnouncementAnswer = "none";
+                                        ShowInfoMessage(
+                                            "Слишком длинное название. Поле «Новое название» должно содержать менее 128 символов",
+                                            "danger");
+                                        break;
+                                    }
+
+                                    FileInfo newFile = new FileInfo(Path.Combine(launchFile.Directory.ToString(),
+                                        _replaceNewFileName + imageFileInfo.Extension));
+                                    if (newFile.Exists)
+                                    {
+                                        _replaceAnnouncementAnswer = "none";
+                                        ShowInfoMessage("Файл с таким именем уже существует.", "danger");
+                                        break;
+                                    }
+
+                                    IsReplaceAnnouncementOpened = false;
                                     _replaceAnnouncementAnswer = "none";
-                                    ReplaceNewFileName = "";
+                                    AddAnnouncement(_replaceNewFileName + imageFileInfo.Extension, item,
+                                        imageFileInfo.LastWriteTime);
+                                    ShowInfoMessage("Переименовано и добавлено.", "success");
                                     break;
                                 }
-
-                                IsReplaceAnnouncementOpened = false;
-                                _replaceAnnouncementAnswer = "none";
-                                AddAnnouncement(_replaceNewFileName + imageFileInfo.Extension, item,
-                                    imageFileInfo.LastWriteTime);
-                                break;
+                                catch (Exception e)
+                                {
+                                    ShowInfoMessage("Ошибка при попытке переименования файла: " + e.Message, "danger");
+                                    _replaceAnnouncementAnswer = "none";
+                                    break;
+                                }
                             case "skip":
                                 IsReplaceAnnouncementOpened = false;
                                 _replaceAnnouncementAnswer = "none";
@@ -502,6 +533,21 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 Name = name,
                 ImagePath = path,
                 LastWriteTime = lastWrite
+            });
+
+            FileInfo launchFile = new FileInfo(_launchPath);
+
+
+            string newPath = Path.Combine(launchFile.Directory.ToString(), name);
+            FileInfo file = new FileInfo(newPath);
+
+            if (file.Exists && file.LastWriteTime == lastWrite)
+                return;
+
+            _fileToCopy.Add(new FileToCopyClass
+            {
+                oldPath = path,
+                newPath = newPath
             });
         }
         catch (Exception e)
@@ -565,6 +611,8 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     }
 
     private List<string> _announcementsPathToRemove = new();
+
+    private List<FileToCopyClass> _fileToCopy = new();
 
     private string _replaceAnnouncementAnswer = "none";
 
@@ -812,7 +860,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
-    
+
     private string _blackoutStart = "22:00:00";
 
     public string BlackoutStart
@@ -873,9 +921,15 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    public void OnPropertyChanged([CallerMemberName] string property = "")
+    private void OnPropertyChanged([CallerMemberName] string property = "")
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
+    }
+
+    public class FileToCopyClass
+    {
+        public string oldPath { get; set; }
+        public string newPath { get; set; }
     }
 
     public class DisplayClass
