@@ -250,11 +250,15 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     private void ImportAnnouncements(string path)
     {
+        _announcements.Clear();
+        
+        if(path.Trim() == "")
+            return;
+        
         try
         {
             FileInfo iniFile = new FileInfo(path);
-
-            _announcements.Clear();
+            
             OnPropertyChanged(nameof(AnnouncementCountContent));
 
             if (iniFile.Exists && iniFile.Extension == ".ini")
@@ -432,19 +436,17 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 FileInfo imageFileInfo = new FileInfo(item);
                 if (!imageFileInfo.Exists)
                     continue;
-
+                
+                FileInfo launchFile = new FileInfo(_launchPath);
                 if (_announcements.Any(it => it.Name == imageFileInfo.Name))
                 {
                     IsReplaceAnnouncementOpened = true;
 
-                    FileInfo launchFile = new FileInfo(_launchPath);
-
                     OldAnnouncementImage = Path.Combine(launchFile.Directory!.ToString(),
-                        _announcements.First(i => i.Name == imageFileInfo.Name).Name);
+                        _announcements.First(i => i.Name == imageFileInfo.Name).Name); 
                     NewAnnouncementImage = item;
 
                     ReplaceNewFileName = "";
-
                     ReplaceFileName = imageFileInfo.Name;
                     while (IsReplaceAnnouncementOpened)
                     {
@@ -474,6 +476,14 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                             case "rename":
                                 try
                                 {
+                                    if (_replaceNewFileName.Trim() == "")
+                                    {
+                                        _replaceAnnouncementAnswer = "none";
+                                        ShowInfoMessage(
+                                            "Некорректное название",
+                                            "danger");
+                                        break;
+                                    }
                                     if (_replaceNewFileName.Length > 128)
                                     {
                                         _replaceAnnouncementAnswer = "none";
@@ -549,6 +559,8 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 oldPath = path,
                 newPath = newPath
             });
+            
+            OnPropertyChanged(nameof(AnnouncementCountContent));
         }
         catch (Exception e)
         {
@@ -563,6 +575,9 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
         try
         {
+            FileInfo file = new FileInfo(announcement.ImagePath);
+            if(file.Exists)
+                _announcementsPathToRemove.Add(announcement.ImagePath);
             Announcements.Remove(announcement);
             OnPropertyChanged(nameof(AnnouncementCountContent));
         }
