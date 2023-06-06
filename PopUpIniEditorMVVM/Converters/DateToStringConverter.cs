@@ -1,11 +1,7 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 using System.Globalization;
-using System.IO;
-using System.Runtime.InteropServices.JavaScript;
 using Avalonia.Data;
 using Avalonia.Data.Converters;
-using PopUpIniEditorMVVM.Views;
 
 namespace PopUpIniEditorMVVM;
 

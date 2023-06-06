@@ -9,7 +9,7 @@
         MinWidth="700" MinHeight="400"
         x:Class="PopUpIniEditorMVVM.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
-        Title="PopUpIniEditorMVVM"
+        Title="Редактор конфигурационных файлов"
         Name="Window">
     <Window.Resources>
         <local:PathToBitmapConverter x:Key="PathToBitmapConverter" />

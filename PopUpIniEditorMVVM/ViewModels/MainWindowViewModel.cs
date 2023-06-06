@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -84,31 +85,27 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 File.Delete(item);
             }
 
-            CopyFiles();
+            try
+            {
+                foreach (var item in _fileToCopy)
+                {
+                    File.Copy(item.oldPath, item.newPath);
+                    //_fileToCopy.Remove(_fileToCopy.Where(it => it.oldPath == item.oldPath).FirstOrDefault());
+                }
+
+                _fileToCopy.Clear();
+            }
+            catch (Exception e)
+            {
+                ShowInfoMessage("Ошибка при копировании файла: " + e.Message, "danger");
+                return;
+            }
 
             ShowInfoMessage("Сохранено.", "success");
         }
         catch (Exception e)
         {
             ShowInfoMessage("Ошибка при сохранении конфигурационного файла: " + e.Message, "danger");
-        }
-    }
-
-    private void CopyFiles()
-    {
-        try
-        {
-            foreach (var item in _fileToCopy)
-            {
-                File.Copy(item.oldPath, item.newPath);
-                //_fileToCopy.Remove(_fileToCopy.Where(it => it.oldPath == item.oldPath).FirstOrDefault());
-            }
-
-            _fileToCopy.Clear();
-        }
-        catch (Exception e)
-        {
-            ShowInfoMessage("Ошибка при копировании файла: " + e.Message, "danger");
         }
     }
 
@@ -153,8 +150,8 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
                 // Write the updated settings.ini file
                 File.WriteAllLines("settings.ini", strs, UTF8NoBOM);
-                if (Environment.OSVersion.Platform.ToString() != "Unix")
-                    SelectUpdatedFile();
+                
+                SelectUpdatedFile(Path.Combine(Environment.CurrentDirectory, "settings.ini"));
 
                 ShowInfoMessage("Сохранено.", "success");
             }
@@ -165,19 +162,43 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    private void SelectUpdatedFile()
+    private void SelectUpdatedFile(string path)
     {
         try
         {
-            Process PrFolder = new Process();
-            ProcessStartInfo psi = new ProcessStartInfo();
-            string file = Path.Combine(Environment.CurrentDirectory, "settings.ini");
-            psi.CreateNoWindow = true;
-            psi.WindowStyle = ProcessWindowStyle.Normal;
-            psi.FileName = "explorer";
-            psi.Arguments = @"/n, /select, " + file;
-            PrFolder.StartInfo = psi;
-            PrFolder.Start();
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                using Process PrFolder = new Process();
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Normal,
+                    FileName = "explorer",
+                    Arguments = @"/n, /select, " + path
+                };
+                PrFolder.StartInfo = psi;
+                PrFolder.Start();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                using Process dbusShowItemsProcess = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "dbus-send",
+                        Arguments = "--print-reply --dest=org.freedesktop.FileManager1 /org/freedesktop/FileManager1 org.freedesktop.FileManager1.ShowItems array:string:\"file://"+ path +"\" string:\"\"",
+                        UseShellExecute = true
+                    }
+                };
+                dbusShowItemsProcess.Start();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                using Process fileOpener = new Process();
+                fileOpener.StartInfo.FileName = "explorer";
+                fileOpener.StartInfo.Arguments = "-R " + path;
+                fileOpener.Start();
+            }
         }
         catch (Exception e)
         {
@@ -251,14 +272,14 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     private void ImportAnnouncements(string path)
     {
         _announcements.Clear();
-        
-        if(path.Trim() == "")
+
+        if (path.Trim() == "")
             return;
-        
+
         try
         {
             FileInfo iniFile = new FileInfo(path);
-            
+
             OnPropertyChanged(nameof(AnnouncementCountContent));
 
             if (iniFile.Exists && iniFile.Extension == ".ini")
@@ -436,14 +457,14 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 FileInfo imageFileInfo = new FileInfo(item);
                 if (!imageFileInfo.Exists)
                     continue;
-                
+
                 FileInfo launchFile = new FileInfo(_launchPath);
                 if (_announcements.Any(it => it.Name == imageFileInfo.Name))
                 {
                     IsReplaceAnnouncementOpened = true;
 
                     OldAnnouncementImage = Path.Combine(launchFile.Directory!.ToString(),
-                        _announcements.First(i => i.Name == imageFileInfo.Name).Name); 
+                        _announcements.First(i => i.Name == imageFileInfo.Name).Name);
                     NewAnnouncementImage = item;
 
                     ReplaceNewFileName = "";
@@ -484,6 +505,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                                             "danger");
                                         break;
                                     }
+
                                     if (_replaceNewFileName.Length > 128)
                                     {
                                         _replaceAnnouncementAnswer = "none";
@@ -559,7 +581,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 oldPath = path,
                 newPath = newPath
             });
-            
+
             OnPropertyChanged(nameof(AnnouncementCountContent));
         }
         catch (Exception e)
@@ -576,7 +598,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         try
         {
             FileInfo file = new FileInfo(announcement.ImagePath);
-            if(file.Exists)
+            if (file.Exists)
                 _announcementsPathToRemove.Add(announcement.ImagePath);
             Announcements.Remove(announcement);
             OnPropertyChanged(nameof(AnnouncementCountContent));
