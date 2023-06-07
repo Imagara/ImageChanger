@@ -80,9 +80,15 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
             File.WriteAllLines(_launchPath, strs, UTF8NoBOM);
 
-            foreach (var item in _announcementsPathToRemove)
+            try
             {
-                File.Delete(item);
+                foreach (var item in _announcementsPathToRemove)
+                    File.Delete(item);
+                _announcementsPathToRemove.Clear();
+            }
+            catch (Exception e)
+            {
+                ShowInfoMessage("Ошибка при удалении файла: " + e.Message, "danger");
             }
 
             try
@@ -150,7 +156,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
                 // Write the updated settings.ini file
                 File.WriteAllLines("settings.ini", strs, UTF8NoBOM);
-                
+
                 SelectUpdatedFile(Path.Combine(Environment.CurrentDirectory, "settings.ini"));
 
                 ShowInfoMessage("Сохранено.", "success");
@@ -186,7 +192,9 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "dbus-send",
-                        Arguments = "--print-reply --dest=org.freedesktop.FileManager1 /org/freedesktop/FileManager1 org.freedesktop.FileManager1.ShowItems array:string:\"file://"+ path +"\" string:\"\"",
+                        Arguments =
+                            "--print-reply --dest=org.freedesktop.FileManager1 /org/freedesktop/FileManager1 org.freedesktop.FileManager1.ShowItems array:string:\"file://" +
+                            path + "\" string:\"\"",
                         UseShellExecute = true
                     }
                 };
@@ -480,11 +488,19 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
                                 try
                                 {
+                                    if (Path.Combine(GetLaunchPath(),
+                                            imageFileInfo.Name) == _announcements
+                                            .First(item => item.Name == imageFileInfo.Name).Name)
+                                    {
+                                        ShowInfoMessage("test: ");
+                                        return;
+                                    }
                                     _announcementsPathToRemove.Add(Path.Combine(launchFile.Directory.ToString(),
                                         imageFileInfo.Name));
 
                                     Announcements.Remove(Announcements.First(item => item.Name == imageFileInfo.Name));
 
+                                    
                                     AddAnnouncement(imageFileInfo.Name, item, imageFileInfo.LastWriteTime);
                                     ShowInfoMessage("Заменено.", "success");
                                 }
@@ -567,10 +583,8 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 LastWriteTime = lastWrite
             });
 
-            FileInfo launchFile = new FileInfo(_launchPath);
 
-
-            string newPath = Path.Combine(launchFile.Directory.ToString(), name);
+            string newPath = Path.Combine(GetLaunchPath(), name);
             FileInfo file = new FileInfo(newPath);
 
             if (file.Exists && file.LastWriteTime == lastWrite)
@@ -598,9 +612,20 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         try
         {
             FileInfo file = new FileInfo(announcement.ImagePath);
-            if (file.Exists)
+
+            if (file.Exists
+                && file.Directory.ToString() == GetLaunchPath()
+                && !_announcementsPathToRemove.Contains(announcement.ImagePath))
+            {
+                ShowInfoMessage("Удаление объявления: " + announcement.ImagePath);
                 _announcementsPathToRemove.Add(announcement.ImagePath);
+            }
+
+            if (_fileToCopy.Select(item => item.oldPath).Contains(announcement.ImagePath))
+                _fileToCopy.Remove(_fileToCopy.Where(item => item.oldPath == announcement.ImagePath).First());
+
             Announcements.Remove(announcement);
+
             OnPropertyChanged(nameof(AnnouncementCountContent));
         }
         catch (Exception e)
@@ -609,7 +634,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    private void ShowInfoMessage(string message, string type = "Primary")
+    public void ShowInfoMessage(string message, string type = "Primary")
     {
         string HexColor = "#000000";
 
@@ -645,6 +670,16 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         {
             //
         }
+    }
+
+    private string GetLaunchPath()
+    {
+        FileInfo path = new FileInfo(_launchPath);
+
+        if (!path.Exists)
+            return "";
+
+        return path.Directory.ToString();
     }
 
     private List<string> _announcementsPathToRemove = new();
