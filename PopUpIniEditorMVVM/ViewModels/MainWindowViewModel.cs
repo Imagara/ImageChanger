@@ -279,6 +279,8 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     private void ImportAnnouncements(string path)
     {
+        _announcementsPathToRemove.Clear();
+        _fileToCopy.Clear();
         _announcements.Clear();
 
         if (path.Trim() == "")
