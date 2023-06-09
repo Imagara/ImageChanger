@@ -494,14 +494,12 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                                             imageFileInfo.Name) == _announcements
                                             .First(item => item.Name == imageFileInfo.Name).Name)
                                     {
-                                        ShowInfoMessage("test: ");
                                         return;
                                     }
                                     _announcementsPathToRemove.Add(Path.Combine(launchFile.Directory.ToString(),
                                         imageFileInfo.Name));
 
                                     Announcements.Remove(Announcements.First(item => item.Name == imageFileInfo.Name));
-
                                     
                                     AddAnnouncement(imageFileInfo.Name, item, imageFileInfo.LastWriteTime);
                                     ShowInfoMessage("Заменено.", "success");
@@ -615,12 +613,19 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         {
             FileInfo file = new FileInfo(announcement.ImagePath);
 
+            FileInfo fileInLaunch = new FileInfo(Path.Combine(GetLaunchPath(),announcement.Name));
+            
             if (file.Exists
                 && file.Directory.ToString() == GetLaunchPath()
                 && !_announcementsPathToRemove.Contains(announcement.ImagePath))
             {
-                ShowInfoMessage("Удаление объявления: " + announcement.ImagePath);
+                ShowInfoMessage("Удаление объявления: " + announcement.Name);
                 _announcementsPathToRemove.Add(announcement.ImagePath);
+            }
+            else if (fileInLaunch.Exists)
+            {
+                ShowInfoMessage("Удаление объявления: " + announcement.Name);
+                _announcementsPathToRemove.Add(fileInLaunch.FullName);
             }
 
             if (_fileToCopy.Select(item => item.oldPath).Contains(announcement.ImagePath))

@@ -1,4 +1,4 @@
-﻿ using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using Avalonia;
+using Avalonia.Media;
 
 namespace PopUpWindow
 {
@@ -115,6 +116,7 @@ namespace PopUpWindow
                 await Task.Delay(seconds * 1000);
             }
         }
+
         private List<string> GetImages()
         {
             Regex regex = new Regex(
@@ -209,6 +211,26 @@ namespace PopUpWindow
                         ? manager.GetPrivateString($"main", "screens").Split('/')
                             .Where(i => !string.IsNullOrWhiteSpace(i)).Select(byte.Parse).ToArray()
                         : new byte[] { 1 };
+
+                    MainSettings.IsBlackoutMode = bool.TryParse(manager.GetPrivateString("main", "isblackout"),
+                        out bool isblackout)
+                        ? isblackout
+                        : MainSettings.IsBlackoutMode;
+                    
+                    MainSettings.BlackoutStart = TimeOnly.TryParse(manager.GetPrivateString("main", "blackoutstart"),
+                        out var timeStart)
+                        ? timeStart
+                        : MainSettings.BlackoutStart;
+                    
+                    MainSettings.BlackoutEnd =
+                        TimeOnly.TryParse(manager.GetPrivateString("main", "blackoutend"), out var timeEnd)
+                            ? timeEnd
+                            : MainSettings.BlackoutEnd;
+
+                    MainSettings.BlackoutBackground =
+                        Color.TryParse(manager.GetPrivateString("main", "background"), out var color)
+                            ? color.ToString()
+                            : MainSettings.BlackoutBackground;
                 }
 
 

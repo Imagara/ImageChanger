@@ -39,7 +39,8 @@
             </Label>
         </Grid>
         <Grid DockPanel.Dock="Right"
-              Background="gray">
+              Background="gray"
+              Name="BackGroundGrid">
             <Image Name="MainImage"
                    Stretch="Fill">
             </Image>

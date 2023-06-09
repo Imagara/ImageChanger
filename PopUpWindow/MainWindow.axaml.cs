@@ -6,6 +6,7 @@ using System.Linq;
 using Avalonia.Media.Imaging;
 using System.Threading.Tasks;
 using Avalonia.Input;
+using Avalonia.Media;
 
 namespace PopUpWindow
 {
@@ -68,12 +69,7 @@ namespace PopUpWindow
                         _settings.DirectoryPath = manager.GetPrivateString($"display{_screenNum}", "directory");
                     }
 
-                    if (bool.TryParse(manager.GetPrivateString("main", "leftpanel"),
-                            out var isVisible))
-                    {
-                        //HelpGrid.IsVisible = isVisible;
-                        HelpGrid.IsVisible = false;
-                    }
+                    HelpGrid.IsVisible = false;
 
                     _logger.CreateLog($"{_screenNum} display: settings successfully imported");
                 }
@@ -87,6 +83,7 @@ namespace PopUpWindow
             else
                 Close();
         }
+
         void MainWindow_Closed(object sender, EventArgs e)
         {
             foreach (var window in MainSettings.Windows.ToList())
@@ -100,19 +97,29 @@ namespace PopUpWindow
         {
             while (true)
             {
-                if (MainSettings.IsBlackoutMode)
+                TimeOnly timeNow = TimeOnly.Parse(DateTime.Now.ToString("HH:mm"));
+                if (MainSettings.IsBlackoutMode && 
+                    (timeNow > MainSettings.BlackoutStart && 
+                     timeNow > MainSettings.BlackoutEnd &&
+                     MainSettings.BlackoutStart > MainSettings.BlackoutEnd)
+                    ||
+                    (timeNow < MainSettings.BlackoutStart &&
+                     timeNow < MainSettings.BlackoutEnd &&
+                     MainSettings.BlackoutStart > MainSettings.BlackoutEnd)
+                    ||
+                    (timeNow > MainSettings.BlackoutStart &&
+                     timeNow < MainSettings.BlackoutEnd))
                 {
-                    TimeOnly timeNow = TimeOnly.Parse(DateTime.Now.ToString("HH:mm"));
-                    if (timeNow > MainSettings.BlackoutStart && timeNow < MainSettings.BlackoutEnd)
-                        MainImage.Source = null;
-                    await Task.Delay(300 * 1000);
+                    MainImage.Source = null;
+                    BackGroundGrid.Background = new SolidColorBrush(Color.Parse(MainSettings.BlackoutBackground));
+                    await Task.Delay(60 * 1000);
                 }
                 else
                 {
                     GetAllPictures();
                     if (_imagesPaths.Count == 0)
-                        await Task.Delay(1800 * 1000);
-                
+                        await Task.Delay(_settings.Rate * 1000);
+
                     foreach (var item in _imagesPaths)
                     {
                         MainImage.Source = new Bitmap(item);
@@ -127,7 +134,7 @@ namespace PopUpWindow
             try
             {
                 _imagesPaths.Clear();
-                
+
                 _imagesPaths.AddRange(Directory
                     .EnumerateFiles(_settings.DirectoryPath, "*.*", SearchOption.TopDirectoryOnly)
                     .Where(filePath => MainSettings.Extensions.Any(ext => ext.Equals(Path.GetExtension(filePath)))));
