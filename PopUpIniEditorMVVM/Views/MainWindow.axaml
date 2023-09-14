@@ -19,6 +19,9 @@
         <vm:MainWindowViewModel />
     </Design.DataContext>
     <Grid>
+        <Grid.KeyBindings>
+            <KeyBinding Gesture="CTRL+Z"  Command="{Binding UndoCommand}"></KeyBinding>
+        </Grid.KeyBindings>
         <TabControl>
             <TabItem>
                 <TabItem.Header>settings</TabItem.Header>
@@ -367,7 +370,7 @@
                                                     BorderThickness="1"
                                                     CornerRadius="15">
                                                 <Image Margin="5"
-                                                       Source="{Binding ImagePath, Converter={StaticResource PathToBitmapConverter}}"
+                                                       Source="{Binding Path, Converter={StaticResource PathToBitmapConverter}}"
                                                        Stretch="Uniform"
                                                        ClipToBounds="True">
                                                 </Image>

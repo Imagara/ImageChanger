@@ -17,7 +17,7 @@ public class DateToStringConverter : IValueConverter
         string val = value.ToString();
         
         if (!DateTime.TryParse(val, out var dt))
-            return new BindingNotification(new Exception("Дата заполнена неверно. Данное значение сохранено не будет"),BindingErrorType.DataValidationError);
+            return new BindingNotification(new Exception("Дата заполнена неверно. Данное значение может не сохраниться"),BindingErrorType.DataValidationError);
 
         return dt;
     }
