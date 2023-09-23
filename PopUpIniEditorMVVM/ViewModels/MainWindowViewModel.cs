@@ -23,8 +23,9 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 {
     private static Encoding UTF8NoBOM =>
         new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+
     private static List<Window> Windows { get; set; } = new();
-    
+
     private List<ActionClass> _actionsList = new();
     private List<ActionClass> _redoList = new List<ActionClass>();
 
@@ -32,7 +33,8 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     // Event to signal ViewModel property changes to the View and update the UI display
     public event PropertyChangedEventHandler PropertyChanged;
 
-    #region  ReactiveCommands
+    #region ReactiveCommands
+
     public ReactiveCommand<string, Unit> ReplaceAnnouncementCommand { get; }
     public ReactiveCommand<Unit, Unit> AddDisplayCommand { get; }
     public ReactiveCommand<Unit, Unit> RemoveDisplayCommand { get; }
@@ -45,8 +47,9 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     public ReactiveCommand<Window, Unit> LaunchSelectDirectoryCommand { get; }
     public ReactiveCommand<Unit, Unit> OpenScreenDefinitionHelpWindowsCommand { get; }
     public ReactiveCommand<Unit, Unit> UndoCommand { get; }
+
     #endregion
-    
+
     // Constructor creating each user command and associated action
     public MainWindowViewModel()
     {
@@ -54,7 +57,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         AddDisplayCommand = ReactiveCommand.Create(AddDisplay);
         RemoveDisplayCommand = ReactiveCommand.Create(RemoveDisplay);
         AddAnnouncementCommand = ReactiveCommand.Create<Window>(AddAnnouncementOpenDialog);
-        RemoveAnnouncementCommand = ReactiveCommand.Create(RemoveAnnouncement);
+        RemoveAnnouncementCommand = ReactiveCommand.Create(RemoveAnnouncementFromList);
         UpdateSettingsIniFileCommand = ReactiveCommand.Create(UpdateSettingsIniFile);
         UpdateLaunchIniFileCommand = ReactiveCommand.Create(UpdateLaunchIniFile);
         DirectorySelectCommand = ReactiveCommand.Create<Window>(DirectorySelect);
@@ -63,7 +66,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         OpenScreenDefinitionHelpWindowsCommand = ReactiveCommand.Create(OpenScreenDefinitionHelpWindows);
         UndoCommand = ReactiveCommand.Create(Undo);
     }
-    
+
 
     void Undo() // alt + z
     {
@@ -104,10 +107,11 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                     Announcements.Add(new AnnouncementClass
                     {
                         Name = action.Args[0],
-                        Path = action.Args[1],
-                        LastWriteTime = DateTime.Parse(action.Args[2]),
-                        ActualStart = DateTime.Parse(action.Args[3]),
-                        ActualEnd = DateTime.Parse(action.Args[4]),
+                        Extension = action.Args[1],
+                        Path = action.Args[2],
+                        LastWriteTime = DateTime.Parse(action.Args[3]),
+                        ActualStart = DateTime.Parse(action.Args[4]),
+                        ActualEnd = DateTime.Parse(action.Args[5]),
                     });
                 }
                 catch (Exception e)
@@ -117,7 +121,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
                 break;
             case "add_announcement":
-                Announcements.Remove(_announcements.Where(item => item.Name == action.Args[0]).First());
+                Announcements.Remove(_announcements.Where(item => item.Name == action.Args[0] && item.Extension == action.Args[1]).First());
                 break;
             default:
                 break;
@@ -128,7 +132,6 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
     void Redo() // alt + shift + z
     {
-        
     }
 
     private void ReplaceAnnouncementChangeAnswer(string param)
@@ -150,8 +153,6 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
             strs.Add($"autodelete={_launchAutoDeleteFile}\n");
 
-            //here
-
             ActionClass action;
 
             foreach (var item in _actionsList) // foreach from first
@@ -160,43 +161,40 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
                 if (action == null)
                     continue;
-                
-                //check here next action (copy->remove)
-                
 
                 switch (action.Action)
                 {
                     case "add_announcement":
                         try
                         {
-                            string newPath = Path.Combine(GetLaunchPath(), action.Args[0] ?? throw new InvalidOperationException("Name undefined"));
-                            string? oldPath = action.Args[1];
-                            
+                            string newPath = Path.Combine(GetLaunchPath(),
+                                action.Args[0] ?? throw new InvalidOperationException("Name undefined"));
+                            string? oldPath = action.Args[2];
+
                             if (oldPath == null)
-                                throw new Exception("old path (arg[1]) undefined");
-                            
+                                throw new Exception("old path (arg[2]) undefined");
+
                             FileInfo fileToCheck = new FileInfo(oldPath);
-                            if (action.Args[2] != fileToCheck.LastWriteTime.ToString(CultureInfo.CurrentCulture))
+                            if (action.Args[3] != fileToCheck.LastWriteTime.ToString(CultureInfo.CurrentCulture))
                                 throw new Exception($"Not the same file ({action.Args[0]})");
                             
-                            if(newPath != oldPath)
-                                File.Copy(action.Args[1]!,newPath);
+                            if (newPath != oldPath)
+                                File.Copy(action.Args[2]!, newPath);
                         }
                         catch (Exception e)
                         {
                             ShowInfoMessage($"Ошибка при перемещении файла {action.Args[0]}. {e.Message}", "Danger");
                         }
+
                         break;
                     case "remove_announcement":
                         try
                         {
-                            string path = action.Args[1];
+                            string path = action.Args[2];
                             FileInfo annofile = new FileInfo(path);
                             if (!annofile.Exists)
-                            {
-                                ShowInfoMessage("!exists");
                                 break;
-                            }
+                            
                             File.Delete(path);
                             Task.Delay(50);
                         }
@@ -204,42 +202,17 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                         {
                             ShowInfoMessage($"Ошибка при удалении файла {action.Args[0]}", "Danger");
                         }
+
                         break;
                 }
             }
+
             _actionsList.Clear();
 
             strs.AddRange(_announcements
                 .Select(item => $"{item.Name}|{item.LastWriteTime}|{item.ActualStart}|{item.ActualEnd}").ToList());
 
             File.WriteAllLines(_launchPath, strs, UTF8NoBOM);
-
-            // try
-            // {
-            //     foreach (var item in _announcementsPathToRemove)
-            //         File.Delete(item);
-            //     _announcementsPathToRemove.Clear();
-            // }
-            // catch (Exception e)
-            // {
-            //     ShowInfoMessage("Ошибка при удалении файла: " + e.Message, "danger");
-            // }
-            //
-            // try
-            // {
-            //     foreach (var item in _fileToCopy)
-            //     {
-            //         File.Copy(item.oldPath, item.newPath);
-            //         //_fileToCopy.Remove(_fileToCopy.Where(it => it.oldPath == item.oldPath).FirstOrDefault());
-            //     }
-            //
-            //     _fileToCopy.Clear();
-            // }
-            // catch (Exception e)
-            // {
-            //     ShowInfoMessage("Ошибка при копировании файла: " + e.Message, "danger");
-            //     return;
-            // }
 
             ShowInfoMessage("Сохранено.", "success");
         }
@@ -362,16 +335,12 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             IsFirstModeStackPanelVisible = isFirstMode;
             IsSecondModeStackPanelVisible = !isFirstMode;
 
+            Displays.Clear();
+
             if (isFirstMode)
-            {
-                Displays.Clear();
                 Displays.Add(new DisplayClass { DisplayNum = 1, IsModeTwo = false });
-            }
             else
-            {
-                Displays.Clear();
                 Displays.Add(new DisplayClass { DisplayNum = 1, IsModeTwo = true });
-            }
         }
         catch (Exception e)
         {
@@ -539,7 +508,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     {
         try
         {
-            new ScreenHelper(); //temporaly
+            var screenHelper = new ScreenHelper();
 
             int index = 1;
 
@@ -608,9 +577,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
         var result = await op.ShowAsync(window);
         if (result != null)
-        {
             AddAnnouncementsFromResult(result);
-        }
 
         OnPropertyChanged(nameof(AnnouncementCountContent));
     }
@@ -619,110 +586,105 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     {
         try
         {
+            DirectoryInfo launchDirectoryInfo = new DirectoryInfo(GetLaunchPath());
+
             foreach (var item in result)
             {
                 FileInfo imageFileInfo = new FileInfo(item);
                 if (!imageFileInfo.Exists)
                     continue;
 
-                //FileInfo launchFile = new FileInfo(_launchPath);
-                // if (_announcements.Any(it => it.Name == imageFileInfo.Name))
-                // {
-                //     IsReplaceAnnouncementOpened = true;
-                //
-                //     OldAnnouncementImage = Path.Combine(launchFile.Directory!.ToString(),
-                //         _announcements.First(i => i.Name == imageFileInfo.Name).Name);
-                //     NewAnnouncementImage = item;
-                //
-                //     ReplaceNewFileName = "";
-                //     ReplaceFileName = imageFileInfo.Name;
-                //     while (IsReplaceAnnouncementOpened)
-                //     {
-                //         await Task.Delay(200);
-                //         switch (_replaceAnnouncementAnswer)
-                //         {
-                //             case "replace":
-                //                 IsReplaceAnnouncementOpened = false;
-                //                 _replaceAnnouncementAnswer = "none";
-                //
-                //                 try
-                //                 {
-                //                     if (Path.Combine(GetLaunchPath(),
-                //                             imageFileInfo.Name) == _announcements
-                //                             .First(item => item.Name == imageFileInfo.Name).Name)
-                //                     {
-                //                         return;
-                //                     }
-                //
-                //                     //_announcementsPathToRemove.Add(Path.Combine(launchFile.Directory.ToString(),
-                //                      //   imageFileInfo.Name));
-                //
-                //                      
-                //                      
-                //                     Announcements.Remove(Announcements.First(item => item.Name == imageFileInfo.Name));
-                //
-                //                     //AddAnnouncement(imageFileInfo.Name, item, imageFileInfo.LastWriteTime);
-                //                     ShowInfoMessage("Заменено.", "success");
-                //                 }
-                //                 catch (Exception e)
-                //                 {
-                //                     ShowInfoMessage("Ошибка во время замены объявления: " + e.Message, "danger");
-                //                 }
-                //
-                //                 break;
-                //             case "rename":
-                //                 try
-                //                 {
-                //                     if (_replaceNewFileName.Trim() == "")
-                //                     {
-                //                         _replaceAnnouncementAnswer = "none";
-                //                         ShowInfoMessage(
-                //                             "Некорректное название",
-                //                             "danger");
-                //                         break;
-                //                     }
-                //
-                //                     if (_replaceNewFileName.Length > 128)
-                //                     {
-                //                         _replaceAnnouncementAnswer = "none";
-                //                         ShowInfoMessage(
-                //                             "Слишком длинное название. Поле «Новое название» должно содержать менее 128 символов",
-                //                             "danger");
-                //                         break;
-                //                     }
-                //
-                //                     FileInfo newFile = new FileInfo(Path.Combine(launchFile.Directory.ToString(),
-                //                         _replaceNewFileName + imageFileInfo.Extension));
-                //                     if (newFile.Exists)
-                //                     {
-                //                         _replaceAnnouncementAnswer = "none";
-                //                         ShowInfoMessage("Файл с таким именем уже существует.", "danger");
-                //                         break;
-                //                     }
-                //
-                //                     IsReplaceAnnouncementOpened = false;
-                //                     _replaceAnnouncementAnswer = "none";
-                //                     AddAnnouncement(_replaceNewFileName + imageFileInfo.Extension, item,
-                //                         imageFileInfo.LastWriteTime);
-                //                     ShowInfoMessage("Переименовано и добавлено.", "success");
-                //                     break;
-                //                 }
-                //                 catch (Exception e)
-                //                 {
-                //                     ShowInfoMessage("Ошибка при попытке переименования файла: " + e.Message, "danger");
-                //                     _replaceAnnouncementAnswer = "none";
-                //                     break;
-                //                 }
-                //             case "skip":
-                //                 IsReplaceAnnouncementOpened = false;
-                //                 _replaceAnnouncementAnswer = "none";
-                //                 break;
-                //         }
-                //     }
-                // }
-                // else
+                FileInfo launchFile = new FileInfo(_launchPath);
+
+                if (_announcements.Any(it => it.Name == imageFileInfo.Name))
                 {
-                    AddAnnouncement(imageFileInfo.Name, item, imageFileInfo.LastWriteTime);
+                    IsReplaceAnnouncementOpened = true;
+
+                    OldAnnouncementImage = Path.Combine(GetLaunchPath(),
+                        _announcements.First(i => i.Name == imageFileInfo.Name).Name);
+                    NewAnnouncementImage = item;
+
+                    ReplaceNewFileName = "";
+                    ReplaceFileName = imageFileInfo.Name;
+                    while (IsReplaceAnnouncementOpened)
+                    {
+                        await Task.Delay(200);
+                        switch (_replaceAnnouncementAnswer)
+                        {
+                            case "replace":
+                                IsReplaceAnnouncementOpened = false;
+                                _replaceAnnouncementAnswer = "none";
+
+                                try
+                                {
+                                    if (Path.Combine(GetLaunchPath(),
+                                            imageFileInfo.Name) ==
+                                        _announcements.First(ann => ann.Name == imageFileInfo.Name).Name)
+                                    {
+                                        return;
+                                    }
+
+                                    RemoveAnnouncement(imageFileInfo.Name,imageFileInfo.Extension, imageFileInfo.LastWriteTime);
+                                    AddAnnouncement(imageFileInfo.Name, imageFileInfo.Extension, item, imageFileInfo.LastWriteTime);
+                                }
+                                catch (Exception e)
+                                {
+                                    ShowInfoMessage("Ошибка во время замены объявления: " + e.Message, "danger");
+                                }
+
+                                break;
+                            case "rename":
+                                try
+                                {
+                                    if (_replaceNewFileName.Trim() == "")
+                                    {
+                                        _replaceAnnouncementAnswer = "none";
+                                        ShowInfoMessage(
+                                            "Некорректное название",
+                                            "danger");
+                                        break;
+                                    }
+
+                                    if (_replaceNewFileName.Length > 128)
+                                    {
+                                        _replaceAnnouncementAnswer = "none";
+                                        ShowInfoMessage(
+                                            "Слишком длинное название. Поле «Новое название» должно содержать менее 128 символов",
+                                            "danger");
+                                        break;
+                                    }
+                                    
+                                    if (_announcements.Any(ann =>
+                                            ann.Name + ann.Extension == Path.Combine(GetLaunchPath(),
+                                                _replaceNewFileName + imageFileInfo.Extension)))
+                                    {
+                                        _replaceAnnouncementAnswer = "none";
+                                        ShowInfoMessage("Объявление с таким названием уже существует.", "danger");
+                                        break;
+                                    }
+
+                                    IsReplaceAnnouncementOpened = false;
+                                    _replaceAnnouncementAnswer = "none";
+                                    AddAnnouncement(_replaceNewFileName, imageFileInfo.Extension, item, imageFileInfo.LastWriteTime);
+                                    break;
+                                }
+                                catch (Exception e)
+                                {
+                                    ShowInfoMessage("Ошибка при попытке переименования файла: " + e.Message, "danger");
+                                    _replaceAnnouncementAnswer = "none";
+                                    break;
+                                }
+                            case "skip":
+                                IsReplaceAnnouncementOpened = false;
+                                _replaceAnnouncementAnswer = "none";
+                                break;
+                        }
+                    }
+                }
+                //
+                else
+                {
+                    AddAnnouncement(imageFileInfo.Name, imageFileInfo.Extension, item, imageFileInfo.LastWriteTime);
                 }
             }
         }
@@ -732,13 +694,14 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    private void AddAnnouncement(string name, string path, DateTime lastWrite)
+    private void AddAnnouncement(string name, string extension, string path, DateTime lastWrite)
     {
         try
         {
             Announcements.Add(new AnnouncementClass
             {
                 Name = name,
+                Extension = extension,
                 Path = path,
                 LastWriteTime = lastWrite
             });
@@ -749,6 +712,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 Args = new[]
                 {
                     name,
+                    extension,
                     path,
                     lastWrite.ToString(CultureInfo.CurrentCulture)
                 }
@@ -761,7 +725,42 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         }
     }
 
-    private void RemoveAnnouncement()
+    private void RemoveAnnouncement(string name, string extension, DateTime lastWriteTime)
+    {
+        AnnouncementClass announcement =
+            _announcements.First(item => item.Name == name && item.Extension == extension && item.LastWriteTime == lastWriteTime);
+
+        if (announcement is null)
+            return;
+
+        try
+        {
+            _actionsList.Add(new ActionClass
+            {
+                Action = "remove_announcement",
+                Args = new[]
+                {
+                    announcement.Name,
+                    announcement.Extension,
+                    Path.Combine(GetLaunchPath(), announcement.Name),
+                    announcement.LastWriteTime.ToString(CultureInfo.CurrentCulture),
+                    announcement.ActualStart.ToString(),
+                    announcement.ActualEnd.ToString()
+                }
+            });
+
+            Announcements.Remove(announcement);
+            File.Delete(Path.Combine(GetLaunchPath(), announcement.Name));
+
+            OnPropertyChanged(nameof(AnnouncementCountContent));
+        }
+        catch (Exception e)
+        {
+            ShowInfoMessage("Ошибка во время удаления объявления: " + e.Message, "danger");
+        }
+    }
+
+    private void RemoveAnnouncementFromList()
     {
         if (_selectedAnnouncement is not AnnouncementClass announcement)
             return;
@@ -774,13 +773,14 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                 Args = new[]
                 {
                     announcement.Name,
-                    Path.Combine(GetLaunchPath(),announcement.Name),
-                    announcement.LastWriteTime.ToString(CultureInfo.InvariantCulture),
+                    announcement.Extension,
+                    Path.Combine(GetLaunchPath(), announcement.Name),
+                    announcement.LastWriteTime.ToString(CultureInfo.CurrentCulture),
                     announcement.ActualStart.ToString(),
                     announcement.ActualEnd.ToString()
                 }
             });
-            
+
             Announcements.Remove(announcement);
 
             OnPropertyChanged(nameof(AnnouncementCountContent));
@@ -844,8 +844,8 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
         return path.Directory!.ToString();
     }
 
-    #region  GetSet
-    
+    #region GetSet
+
     private string _replaceAnnouncementAnswer = "none";
 
     public string AnnouncementCountContent => $"Обьявлений : {_announcements.Count}";
@@ -1152,12 +1152,14 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
+
     #endregion
 
     private void OnPropertyChanged([CallerMemberName] string property = "")
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
     }
+
     public class DisplayClass
     {
         public int DisplayNum { get; set; }
@@ -1176,6 +1178,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     public class AnnouncementClass
     {
         public string Name { get; set; }
+        public string Extension { get; set; }
         public string Path { get; set; }
         public DateTime LastWriteTime { get; set; }
         public DateTime? ActualStart { get; set; } = DateTime.Now;
