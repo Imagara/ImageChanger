@@ -386,7 +386,7 @@
                                                     <TextBox Text="{Binding Name, Mode=OneWay}" IsReadOnly="True" />
                                                     <Label Content="Актуально с" />
                                                     <TextBox
-                                                        Text="{Binding ActualStart, Converter={StaticResource DateToStringConverter}}" />
+                                                        Text="{Binding ActualStart, Converter={StaticResource DateToStringConverter}}"/>
                                                     <Label Content="Актуально до" />
                                                     <TextBox
                                                         Text="{Binding ActualEnd, Converter={StaticResource DateToStringConverter}}" />

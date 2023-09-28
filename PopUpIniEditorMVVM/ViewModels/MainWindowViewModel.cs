@@ -155,7 +155,7 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
             ActionClass action;
 
-            foreach (var item in _actionsList) // foreach from first
+            foreach (var item in _actionsList)
             {
                 action = item;
 
@@ -175,6 +175,10 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                                 throw new Exception("old path (arg[2]) undefined");
 
                             FileInfo fileToCheck = new FileInfo(oldPath);
+                            
+                            if(!fileToCheck.Exists)
+                                throw new Exception($"Файл больше не существует ({action.Args[0]})");
+                            
                             if (action.Args[3] != fileToCheck.LastWriteTime.ToString(CultureInfo.CurrentCulture))
                                 throw new Exception($"Not the same file ({action.Args[0]})");
                             
@@ -202,7 +206,6 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                         {
                             ShowInfoMessage($"Ошибка при удалении файла {action.Args[0]}", "Danger");
                         }
-
                         break;
                 }
             }
@@ -665,7 +668,19 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
 
                                     IsReplaceAnnouncementOpened = false;
                                     _replaceAnnouncementAnswer = "none";
-                                    AddAnnouncement(_replaceNewFileName, imageFileInfo.Extension, item, imageFileInfo.LastWriteTime);
+                                    
+                                    string extension = imageFileInfo.Extension;
+                                    
+                                    string pattern =@".(jpe?g|jpg|png)$";
+                                    Match m = Regex.Match(_replaceNewFileName, pattern);
+                                    if (m.Success)
+                                    {
+                                        extension = m.Value;
+                                        _replaceNewFileName = Regex.Replace(_newAnnouncementImage,
+                                            @"/\.(jpe?g|jpg|png)$/gi", "");
+                                    }
+                                    
+                                    AddAnnouncement(_replaceNewFileName  + extension, extension, item, imageFileInfo.LastWriteTime);
                                     break;
                                 }
                                 catch (Exception e)
@@ -681,7 +696,6 @@ public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
                         }
                     }
                 }
-                //
                 else
                 {
                     AddAnnouncement(imageFileInfo.Name, imageFileInfo.Extension, item, imageFileInfo.LastWriteTime);
